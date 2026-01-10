@@ -18,6 +18,7 @@ const manifest = {
     "version": "2.0.0",
     "name": "Arabic Subtitles Pro (V2 Final)",
     "description": "Arabic subs (YTS, OS, SubDL, SubSource) - Global Ranking.",
+    "logo": "https://stremio-arabic-subtitles-1.onrender.com/logo.png",
     "behaviorHints": {
         "configurable": true,
         "configurationURL": "https://arabic-subtitles-pro.onrender.com/configure"

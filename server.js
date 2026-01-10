@@ -216,6 +216,16 @@ app.get("/test-subdl-headers", async (req, res) => {
     }
 });
 
+// Serve Logo
+app.get("/logo.png", (req, res) => {
+    const logoPath = path.join(__dirname, "logo.png");
+    if (fs.existsSync(logoPath)) {
+        res.sendFile(logoPath);
+    } else {
+        res.status(404).send("Logo not found");
+    }
+});
+
 // 5. Connectivity
 app.get("/ping", (req, res) => res.json({ status: "alive" }));
 
