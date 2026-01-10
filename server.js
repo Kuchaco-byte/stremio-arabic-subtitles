@@ -133,6 +133,10 @@ function serveManifest(req, res) {
         const config = req.addonConfig;
 
         const domain = `${req.protocol}://${req.get('host')}`;
+
+        // Dynamically set logo to current host
+        manifest.logo = `${domain}/logo.png`;
+
         if (manifest.behaviorHints) {
             manifest.behaviorHints.configurationURL = `${domain}/configure`;
         }
