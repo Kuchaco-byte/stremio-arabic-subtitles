@@ -191,122 +191,108 @@
                     onchange="updateUrlPreview()">
             </div>
 
-            <div style="margin-top: 20px; text-align: right;">
-                <label style="color: var(--subtext); font-size: 0.8rem;">رابط المانيفست المولد:</label>
-                <div style="display: flex; gap: 10px; margin-top: 5px;">
-                    <input type="text" id="manifestPreview" readonly
-                        style="font-size: 0.7rem; background: #110c1f; border-color: #33215c;">
-                    <button onclick="copyToClipboard()"
-                        style="background: #33215c; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">نسخ</button>
-                </div>
-            </div>
+            <!-- Preview Removed for Production -->
 
-            <div
-                style="background: rgba(255, 165, 0, 0.1); border: 1px solid orange; padding: 10px; border-radius: 8px; font-size: 0.8rem; color: #ffcc00; margin-top: 15px;">
-                ⚠️ ملاحظة: إذا فشل الزر أدناه، قم بنسخ الرابط أعلاه ولصقه يدوياً في خانة البحث داخل Stremio.
+            <button id="mainBtn" class="install-btn" onclick="installAddon()">تثبيت الإضافة بالإعدادات المختارة</button>
+
+            <div class="footer">
+                مدعوم بواسطة Stremio Addon SDK
             </div>
         </div>
 
-        <button id="mainBtn" class="install-btn" onclick="installAddon()">تثبيت الإضافة بالإعدادات المختارة</button>
+        <script>
+            function getManifestUrl() {
+                const lang = document.getElementById('lang').value;
+                const osCount = document.getElementById('osCount').value;
+                const ytsCount = document.getElementById('ytsCount').value;
+                const subdlKey = document.getElementById('subdlKey').value;
+                const subsourceKey = document.getElementById('subsourceKey').value;
 
-        <div class="footer">
-            مدعوم بواسطة Stremio Addon SDK
-        </div>
-    </div>
+                const config = {
+                    lang: lang,
+                    osCount: osCount,
+                    ytsCount: ytsCount,
+                    subdlKey: subdlKey,
+                    subsourceKey: subsourceKey
+                };
 
-    <script>
-        function getManifestUrl() {
-            const lang = document.getElementById('lang').value;
-            const osCount = document.getElementById('osCount').value;
-            const ytsCount = document.getElementById('ytsCount').value;
-            const subdlKey = document.getElementById('subdlKey').value;
-            const subsourceKey = document.getElementById('subsourceKey').value;
+                const configStr = btoa(JSON.stringify(config)); // URL-safe Base64
 
-            const config = {
-                lang: lang,
-                osCount: osCount,
-                ytsCount: ytsCount,
-                subdlKey: subdlKey,
-                subsourceKey: subsourceKey
-            };
+                let domain = window.location.host;
+                let protocol = window.location.protocol;
 
-            const configStr = btoa(JSON.stringify(config)); // URL-safe Base64
-
-            let domain = window.location.host;
-            let protocol = window.location.protocol;
-
-            if (!domain || domain === "" || protocol === 'file:') {
-                domain = "127.0.0.1:7000";
-                protocol = "http:";
-            }
-
-            return `${protocol}//${domain}/${configStr}/manifest.json`;
-        }
-
-        function updateUrlPreview() {
-            const url = getManifestUrl();
-            document.getElementById('manifestPreview').value = url;
-        }
-
-        function copyToClipboard(event) {
-            const copyText = document.getElementById("manifestPreview");
-            const copyBtn = event.currentTarget;
-            const originalText = copyBtn.innerText;
-
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-
-            try {
-                document.execCommand("copy");
-                copyBtn.innerText = "تم النسخ!";
-                copyBtn.style.background = "#28a745";
-
-                setTimeout(() => {
-                    copyBtn.innerText = originalText;
-                    copyBtn.style.background = "#33215c";
-                }, 2000);
-            } catch (err) {
-                alert("فشل النسخ التلقائي، يرجى النسخ يدوياً.");
-            }
-        }
-
-        function installAddon() {
-            const manifestUrl = getManifestUrl();
-            const stremioUrl = manifestUrl.replace("https://", "stremio://").replace("http://", "stremio://");
-            console.log("Installing with:", stremioUrl);
-            window.location.href = stremioUrl;
-        }
-
-        // Initial preview
-        updateUrlPreview();
-
-        // Populate from URL if exists
-        // Populate from URL if exists
-        function initFromUrl() {
-            try {
-                const path = window.location.pathname;
-                const parts = path.split('/');
-                const configStr = parts.length > 2 ? parts[1] : null;
-
-                if (configStr && !configStr.includes('configure') && configStr.length > 5) {
-                    const decoded = atob(configStr);
-                    // Check if it's JSON
-                    if (decoded.startsWith('{')) {
-                        const config = JSON.parse(decoded);
-                        if (config.lang) document.getElementById('lang').value = config.lang;
-                        if (config.osCount) document.getElementById('osCount').value = config.osCount;
-                        if (config.ytsCount) document.getElementById('ytsCount').value = config.ytsCount;
-                        if (config.subdlKey) document.getElementById('subdlKey').value = config.subdlKey;
-                        if (config.subsourceKey) document.getElementById('subsourceKey').value = config.subsourceKey;
-                    }
-                    updateUrlPreview();
+                if (!domain || domain === "" || protocol === 'file:') {
+                    domain = "127.0.0.1:7000";
+                    protocol = "http:";
                 }
-            } catch (e) { console.log('Parsed config error', e); }
-        }
+
+                return `${protocol}//${domain}/${configStr}/manifest.json`;
+            }
+
+            function updateUrlPreview() {
+                const url = getManifestUrl();
+                document.getElementById('manifestPreview').value = url;
+            }
+
+            function copyToClipboard(event) {
+                const copyText = document.getElementById("manifestPreview");
+                const copyBtn = event.currentTarget;
+                const originalText = copyBtn.innerText;
+
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+
+                try {
+                    document.execCommand("copy");
+                    copyBtn.innerText = "تم النسخ!";
+                    copyBtn.style.background = "#28a745";
+
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                        copyBtn.style.background = "#33215c";
+                    }, 2000);
+                } catch (err) {
+                    alert("فشل النسخ التلقائي، يرجى النسخ يدوياً.");
+                }
+            }
+
+            function installAddon() {
+                const manifestUrl = getManifestUrl();
+                const stremioUrl = manifestUrl.replace("https://", "stremio://").replace("http://", "stremio://");
+                console.log("Installing with:", stremioUrl);
+                window.location.href = stremioUrl;
+            }
+
+            // Initial preview
+            updateUrlPreview();
+
+            // Populate from URL if exists
+            // Populate from URL if exists
+            function initFromUrl() {
+                try {
+                    const path = window.location.pathname;
+                    const parts = path.split('/');
+                    const configStr = parts.length > 2 ? parts[1] : null;
+
+                    if (configStr && !configStr.includes('configure') && configStr.length > 5) {
+                        const decoded = atob(configStr);
+                        // Check if it's JSON
+                        if (decoded.startsWith('{')) {
+                            const config = JSON.parse(decoded);
+                            if (config.lang) document.getElementById('lang').value = config.lang;
+                            if (config.osCount) document.getElementById('osCount').value = config.osCount;
+                            if (config.ytsCount) document.getElementById('ytsCount').value = config.ytsCount;
+                            if (config.subdlKey) document.getElementById('subdlKey').value = config.subdlKey;
+                            if (config.subsourceKey) document.getElementById('subsourceKey').value = config.subsourceKey;
+                        }
+                        updateUrlPreview();
+                    }
+                } catch (e) { console.log('Parsed config error', e); }
+            }
             }
         }
-        initFromUrl();
-    </script>
+            initFromUrl();
+        </script>
 </body>
 
 </html>

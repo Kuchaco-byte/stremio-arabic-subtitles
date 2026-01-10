@@ -64,21 +64,38 @@ function configMiddleware(req, res, next) {
 
     if (configStr) {
         console.log(`[Config] Parsing: ${configStr}`);
-        if (configStr.includes("_")) {
-            const parts = configStr.split("_");
-            config.lang = parts[0] || "ara";
-            config.osCount = parseInt(parts[1]) || 5;
-            config.ytsCount = parseInt(parts[2]) || 3;
-            config.subdlKey = (parts[3] === "nokey" ? "" : parts[3]) || "";
-            config.subsourceKey = (parts[4] === "nokey" ? "" : parts[4]) || "";
-        } else if (configStr.includes("=")) {
-            const normalized = configStr.replace(/,/g, '&').replace(/\|/g, '&');
-            try {
-                const params = new URLSearchParams(normalized);
-                config.lang = params.get("lang") || "ara";
-                config.osCount = parseInt(params.get("os")) || 5;
-                config.ytsCount = parseInt(params.get("yts")) || 3;
-            } catch (e) { }
+        try {
+            // Priority 1: JSON Base64
+            const decoded = atob(configStr);
+            if (decoded.trim().startsWith('{')) {
+                const jsonConfig = JSON.parse(decoded);
+                config.lang = jsonConfig.lang || "ara";
+                config.osCount = parseInt(jsonConfig.osCount) || 5;
+                config.ytsCount = parseInt(jsonConfig.ytsCount) || 3;
+                config.subdlKey = jsonConfig.subdlKey || "";
+                config.subsourceKey = jsonConfig.subsourceKey || "";
+                console.log("[Config] Loaded via JSON Base64");
+            } else {
+                throw new Error("Not JSON");
+            }
+        } catch (e) {
+            // Fallback: Legacy Formats
+            if (configStr.includes("_")) {
+                const parts = configStr.split("_");
+                config.lang = parts[0] || "ara";
+                config.osCount = parseInt(parts[1]) || 5;
+                config.ytsCount = parseInt(parts[2]) || 3;
+                config.subdlKey = (parts[3] === "nokey" ? "" : parts[3]) || "";
+                config.subsourceKey = (parts[4] === "nokey" ? "" : parts[4]) || "";
+            } else if (configStr.includes("=")) {
+                const normalized = configStr.replace(/,/g, '&').replace(/\|/g, '&');
+                try {
+                    const params = new URLSearchParams(normalized);
+                    config.lang = params.get("lang") || "ara";
+                    config.osCount = parseInt(params.get("os")) || 5;
+                    config.ytsCount = parseInt(params.get("yts")) || 3;
+                } catch (e) { }
+            }
         }
     }
     req.addonConfig = config;
@@ -88,14 +105,23 @@ function configMiddleware(req, res, next) {
 // 1. Manifest Routes
 app.get("/manifest.json", (req, res, next) => {
     const configStr = req.params.config; // This will be undefined for /manifest.json
-    const [lang, osCount, ytsCount, subdlKey, subsourceKey] = (configStr || "ara_5_3_nokey_nokey").split("_");
-    req.addonConfig = {
-        lang: lang || "ara",
-        osCount: parseInt(osCount) || 5,
-        ytsCount: parseInt(ytsCount) || 3,
-        subdlKey: subdlKey === "nokey" ? "" : subdlKey,
-        subsourceKey: subsourceKey === "nokey" ? "" : subsourceKey
-    };
+    let config = { lang: "ara", osCount: 5, ytsCount: 3, subdlKey: "", subsourceKey: "" };
+    try {
+        // Attempt JSON parse first if it looks like one, otherwise fallback
+        if (configStr && configStr.length > 10 && !configStr.includes('_')) {
+            const jsonConfig = JSON.parse(atob(configStr));
+            config = { ...config, ...jsonConfig };
+        } else if (configStr) {
+            const parts = configStr.split("_");
+            config.lang = parts[0] || "ara";
+            config.osCount = parseInt(parts[1]) || 5;
+            config.ytsCount = parseInt(parts[2]) || 3;
+            config.subdlKey = (parts[3] === "nokey" ? "" : parts[3]) || "";
+            config.subsourceKey = (parts[4] === "nokey" ? "" : parts[4]) || "";
+        }
+    } catch (e) { }
+
+    req.addonConfig = config;
     next();
 }, serveManifest);
 
