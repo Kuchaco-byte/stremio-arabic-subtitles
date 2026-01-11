@@ -78,10 +78,23 @@ function serveManifest(req, res) {
         const host = req.get('host');
         const domain = `${protocol}://${host}`;
 
-        // Cloud-Ready ID & Version
-        manifest.id = "org.stplus.cloud.v1";
-        manifest.version = "1.0.3";
+        // Language Mapping for Manifest Labeling
+        const langNames = {
+            "ara": "Arabic", "eng": "English", "fre": "French", "spa": "Spanish", "ger": "German",
+            "ita": "Italian", "rus": "Russian", "tur": "Turkish", "por": "Portuguese", "dut": "Dutch",
+            "chi": "Chinese", "zho": "Chinese", "jpn": "Japanese", "kor": "Korean", "hin": "Hindi",
+            "ben": "Bengali", "tam": "Tamil", "tel": "Telugu", "mal": "Malayalam", "kan": "Kannada",
+            "swe": "Swedish", "nor": "Norwegian", "fin": "Finnish", "dan": "Danish", "pol": "Polish",
+            "cze": "Czech", "hun": "Hungarian", "rom": "Romanian", "gre": "Greek", "heb": "Hebrew",
+            "tha": "Thai", "ind": "Indonesian", "may": "Malay", "vie": "Vietnamese"
+        };
+        const activeLang = langNames[config.lang] || "Multi";
 
+        // Dynamic Manifest Branding
+        manifest.name = `ST+ ${activeLang}`;
+        manifest.description = `Multi-provider ${activeLang} subtitles`;
+
+        // Ensure relative paths are converted to absolute for Stremio
         manifest.logo = `${domain}/logo.png`;
 
         // URL-SAFE Base64 Configuration
@@ -96,7 +109,7 @@ function serveManifest(req, res) {
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.status(200).json(manifest);
     } catch (e) {
-        res.status(500).json({ error: "Manifest generation failed" });
+        res.status(500).json({ error: "Manifest generation failed: " + e.message });
     }
 }
 
@@ -114,9 +127,14 @@ async function handleSubtitles(req, res) {
     }
 
     try {
-        const result = await addonInterface.getSubtitles({ type, id, filename }, config);
+        // Pass dynamic domain as baseUrl to addon
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const domain = `${protocol}://${req.get('host')}`;
+
+        const result = await addonInterface.getSubtitles({ type, id, filename }, { ...config, baseUrl: domain });
         res.json(result || { subtitles: [] });
     } catch (e) {
+        console.error("[Server] Subtitle error:", e.message);
         res.json({ subtitles: [] });
     }
 }

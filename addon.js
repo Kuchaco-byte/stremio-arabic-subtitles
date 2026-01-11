@@ -14,21 +14,24 @@ const subsource = require("./subsource");
 const cache = require("./cache");
 
 const manifest = {
-    "id": "org.stplus.v1",
-    "version": "1.0.0",
-    "name": "ST+ Arabic",
-    "description": "Multi-provider Arabic subtitles",
-    "logo": "http://127.0.0.1:7000/logo.png",
+    "id": "org.stplus.cloud.v1",
+    "version": "1.0.3",
+    "name": "ST+",
+    "description": "Multi-provider subtitles",
+    "logo": "/logo.png",
     "behaviorHints": {
         "configurable": true,
-        "configurationURL": "http://127.0.0.1:7000/configure"
+        "configurationURL": "/configure"
     },
     "resources": ["subtitles"],
     "types": ["movie", "series"]
 };
 
-function getBaseUrl() {
-    return "http://127.0.0.1:7000";
+// No longer hardcoded to 127.0.0.1. Will be passed from server.
+let defaultBaseUrl = "";
+
+function getBaseUrl(override) {
+    return override || defaultBaseUrl || "";
 }
 
 /**
@@ -152,7 +155,7 @@ module.exports = {
         const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${osCount}:${ytsCount}:${autoTranslate}`;
         const cachedResults = cache.get(cacheKey);
 
-        const baseUrl = getBaseUrl();
+        const baseUrl = getBaseUrl(config.baseUrl);
 
         if (cachedResults) {
             console.log(`[Addon] Cache HIT for key: ${cacheKey} | Results: ${cachedResults.length}`);
