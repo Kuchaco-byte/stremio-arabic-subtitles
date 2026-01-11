@@ -317,7 +317,7 @@ module.exports = {
                         const displayTitle = `🤖 [AI] (${srcLangCap}) [${providerTag}] ${cleanTitle}`;
 
                         return {
-                            id: `sub_trans_${foundLang}_${i}_${uniqueMediaId}`,
+                            id: `sub_trans_${foundLang}_i${i}_${uniqueMediaId}`, // Added 'i' for guaranteed uniqueness
                             url: proxyUrl,
                             lang: lang, // WE PRETEND it is the target language so Stremio shows it
                             title: displayTitle,

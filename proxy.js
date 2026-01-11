@@ -4,7 +4,7 @@ const iconv = require("iconv-lite");
 const zlib = require("zlib");
 const unrar = require("node-unrar-js");
 const translatte = require("translatte");
-const { Parser } = require("srt-parser-2");
+const Parser = require("srt-parser-2").default;
 const cache = require("./cache"); // Import cache module
 
 async function downloadSubtitle(url, season, episode, refererHint, provider, userLang = "ara", translateTo = null) {
