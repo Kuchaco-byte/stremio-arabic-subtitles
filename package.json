@@ -15,6 +15,7 @@
     "localtunnel": "^2.0.2",
     "named-queue": "^2.2.1",
     "stremio-addon-sdk": "^1.6.10",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "node-unrar-js": "^2.0.0"
   }
 }
