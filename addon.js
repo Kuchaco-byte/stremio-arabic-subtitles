@@ -234,16 +234,13 @@ module.exports = {
             }
         });
 
-        // 3. Return standard results
-        cache.set(cacheKey, allSubtitles);
-        let ranked = rankSubtitles(allSubtitles, filename);
-
         // Apply Smart Deduplication (Filter duplicates, keeping highest rank)
         ranked = deduplicateSubtitles(ranked);
 
         // 3. Smart Auto-Translation Fallback
-        if (ranked.length === 0 && config.autoTranslate === true && lang !== "eng") {
-            console.log(`[Addon] No results for ${lang}. Auto-Translation Enabled.`);
+        // Trigger if we have very few results (less than 2) to ensure user gets AI variants even with stray native matches
+        if (ranked.length < 2 && config.autoTranslate === true && lang !== "eng") {
+            console.log(`[Addon] Low/No results for ${lang} (${ranked.length}). AI Fallback Enabled.`);
 
             // Priority List: English -> Spanish -> French -> German
             const sourceLanguages = ["eng", "spa", "fre", "ger"];
@@ -251,13 +248,7 @@ module.exports = {
             let foundLang = "";
 
             for (const srcLang of sourceLanguages) {
-                // Skip if the target language IS one of the source languages (e.g. user wants Spanish, don't use Spanish as source)
-                // actually, if user wants Spanish and we found 0 results above, we shouldn't be here. 
-                // But if user wants "bra" (Portuguese) and we have "por" (Portuguese), we might mistake it. 
-                // For safety, avoiding self-translation is good, but "eng" is already checked.
                 if (srcLang === lang) continue;
-
-                console.log(`[Addon] AI: Trying source language: ${srcLang}`);
 
                 const sourcePromises = activeProviders.map(async (p) => {
                     try {
@@ -287,39 +278,29 @@ module.exports = {
             }
 
             if (foundSourceSubs.length > 0) {
-                console.log(`[Addon] AI: Found ${foundSourceSubs.length} subtitles in ${foundLang}. preparing translation...`);
+                console.log(`[Addon] AI: Found ${foundSourceSubs.length} source subs. preparing translation...`);
 
-                // Rank the source subtitles first to get the best ones
                 const rankedSource = rankSubtitles(foundSourceSubs, filename);
-
-                // Deduplicate source
                 const dedupedSource = deduplicateSubtitles(rankedSource);
-
-                // Take TOP 3
                 const top3 = dedupedSource.slice(0, 3);
 
                 const translatedResults = top3.map((s, i) => {
                     if (s.url) {
                         const cb = Math.floor(Date.now() / 3600000);
-                        // Append &translate=TARGET_LANG
                         let proxyUrl = `${baseUrl}/proxy/subtitle?url=${encodeURIComponent(s.url)}&cb=${cb}&provider=${encodeURIComponent(s.source || "Unknown")}&lang=${encodeURIComponent(foundLang)}`;
                         if (s.referer) proxyUrl += `&referer=${encodeURIComponent(s.referer)}`;
                         proxyUrl += `&season=${season}&episode=${episode}`;
-                        proxyUrl += `&translate=${encodeURIComponent(lang)}`; // Trigger Translation
+                        proxyUrl += `&translate=${encodeURIComponent(lang)}`;
 
                         const providerTag = (s.source === "OpenSubtitles") ? "OS" : (s.source || "UNK");
                         const cleanTitle = s.title.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
-                        // Capitalize Lang
                         const srcLangCap = foundLang.charAt(0).toUpperCase() + foundLang.slice(1);
-
-                        // Flag title as AI Translated with Source
-                        // e.g. 🤖 [AI] (Eng) [OS] Title
                         const displayTitle = `🤖 [AI] (${srcLangCap}) [${providerTag}] ${cleanTitle}`;
 
                         return {
-                            id: `sub_trans_${foundLang}_i${i}_${uniqueMediaId}`, // Added 'i' for guaranteed uniqueness
+                            id: `sub_trans_${foundLang}_i${i}_${uniqueMediaId}`,
                             url: proxyUrl,
-                            lang: lang, // WE PRETEND it is the target language so Stremio shows it
+                            lang: lang,
                             title: displayTitle,
                             originalTitle: cleanTitle,
                             fileSize: s.fileSize,
@@ -330,17 +311,17 @@ module.exports = {
                     return null;
                 }).filter(s => s);
 
-                ranked = translatedResults; // Replace empty results with these AI results
+                // Append AI results instead of overwriting
+                ranked = ranked.concat(translatedResults);
             }
         }
 
         // 4. Final Fallback: If absolutely no results, return a "No Subtitles Found" Dummy
-        // This prevents Stremio from disabling the language in the UI, allowing the user to see the attempt.
         if (ranked.length === 0) {
-            console.log(`[Addon] No subtitles found for ${lang} (Native or AI). Returning Dummy.`);
+            console.log(`[Addon] No subtitles found for ${lang}. Returning Dummy.`);
             ranked.push({
                 id: `no_subs_${uniqueMediaId}`,
-                url: `${baseUrl}/static/empty.vtt`, // Static URL instead of Data URI
+                url: `${baseUrl}/static/empty.vtt`,
                 lang: lang,
                 title: `❌ No subtitles found for ${lang}`,
                 originalTitle: "No Result",
@@ -350,6 +331,10 @@ module.exports = {
             });
         }
 
-        return { subtitles: ranked.slice(0, 40) }; // Global Smart Sort, Top 40 Unique
+        // SAVE TO CACHE (including AI results)
+        cache.set(cacheKey, ranked);
+
+        return { subtitles: ranked.slice(0, 40) };
+        // Global Smart Sort, Top 40 Unique
     }
 };
