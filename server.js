@@ -72,6 +72,8 @@ function configMiddleware(req, res, next) {
                 config.lang = jsonConfig.lang || "ara";
                 config.osCount = parseInt(jsonConfig.osCount) || 5;
                 config.ytsCount = parseInt(jsonConfig.ytsCount) || 3;
+                config.subdlLimit = parseInt(jsonConfig.subdlLimit) || 5;
+                config.subsourceLimit = parseInt(jsonConfig.subsourceLimit) || 5;
                 config.subdlKey = jsonConfig.subdlKey || "";
                 config.subsourceKey = jsonConfig.subsourceKey || "";
                 console.log("[Config] Loaded via JSON Base64");
@@ -85,6 +87,8 @@ function configMiddleware(req, res, next) {
                 config.lang = parts[0] || "ara";
                 config.osCount = parseInt(parts[1]) || 5;
                 config.ytsCount = parseInt(parts[2]) || 3;
+                config.subdlLimit = 5;
+                config.subsourceLimit = 5;
                 config.subdlKey = (parts[3] === "nokey" ? "" : parts[3]) || "";
                 config.subsourceKey = (parts[4] === "nokey" ? "" : parts[4]) || "";
             } else if (configStr.includes("=")) {
@@ -94,6 +98,8 @@ function configMiddleware(req, res, next) {
                     config.lang = params.get("lang") || "ara";
                     config.osCount = parseInt(params.get("os")) || 5;
                     config.ytsCount = parseInt(params.get("yts")) || 3;
+                    config.subdlLimit = 5;
+                    config.subsourceLimit = 5;
                 } catch (e) { }
             }
         }
@@ -105,7 +111,7 @@ function configMiddleware(req, res, next) {
 // 1. Manifest Routes
 app.get("/manifest.json", (req, res, next) => {
     const configStr = req.params.config; // This will be undefined for /manifest.json
-    let config = { lang: "ara", osCount: 5, ytsCount: 3, subdlKey: "", subsourceKey: "" };
+    let config = { lang: "ara", osCount: 5, ytsCount: 3, subdlLimit: 5, subsourceLimit: 5, subdlKey: "", subsourceKey: "" };
     try {
         // Attempt JSON parse first if it looks like one, otherwise fallback
         if (configStr && configStr.length > 10 && !configStr.includes('_')) {
@@ -116,6 +122,8 @@ app.get("/manifest.json", (req, res, next) => {
             config.lang = parts[0] || "ara";
             config.osCount = parseInt(parts[1]) || 5;
             config.ytsCount = parseInt(parts[2]) || 3;
+            config.subdlLimit = 5;
+            config.subsourceLimit = 5;
             config.subdlKey = (parts[3] === "nokey" ? "" : parts[3]) || "";
             config.subsourceKey = (parts[4] === "nokey" ? "" : parts[4]) || "";
         }

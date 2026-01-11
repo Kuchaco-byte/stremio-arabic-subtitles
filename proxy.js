@@ -2,6 +2,7 @@ const axios = require("axios");
 const AdmZip = require("adm-zip");
 const iconv = require("iconv-lite");
 const zlib = require("zlib");
+const unrar = require("node-unrar-js");
 
 async function downloadSubtitle(url, season, episode, refererHint, provider) {
     const sStr = season !== undefined ? `S${season}` : "Movie";
@@ -27,7 +28,7 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
             responseType: 'arraybuffer',
             headers: headers,
             timeout: 30000,
-            maxContentLength: 1000000, // 1MB Limit
+            maxContentLength: 5000000, // Increased to 5MB for large RARs
             validateStatus: (status) => status < 400 || status === 403
         });
 
@@ -39,7 +40,7 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
         let buffer = response.data;
 
         // Final size check
-        if (!buffer || buffer.length > 1000000) {
+        if (!buffer || buffer.length > 5000000) {
             console.error(`[Proxy] File too large or empty (${buffer ? buffer.length : 0} bytes). Skipping.`);
             return null;
         }
@@ -51,7 +52,53 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
 
         const contentType = (response.headers['content-type'] || "").toLowerCase();
 
-        // ZIP Extraction with Smart Episode Identification
+        // 1. RAR Extraction
+        // Signature: Rar! (0x52 0x61 0x72 0x21)
+        if ((buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72 && buffer[3] === 0x21) || url.toLowerCase().includes('.rar') || contentType.includes('rar')) {
+            try {
+                // Create extractor
+                const extractor = await unrar.createExtractorFromData({ data: buffer });
+                const list = extractor.getFileList();
+                const listEntries = [...list.fileHeaders];
+
+                // Filter for .srt
+                const srtEntries = listEntries.filter(entry => !entry.flags.directory && entry.name.toLowerCase().endsWith('.srt'));
+
+                if (srtEntries.length > 0) {
+                    let selectedEntry = srtEntries[0];
+
+                    if (srtEntries.length > 1 && season !== undefined && episode !== undefined) {
+                        const s = String(season).padStart(2, '0');
+                        const e = String(episode).padStart(2, '0');
+                        const patterns = [
+                            new RegExp(`S${s}E${e}`, 'i'),
+                            new RegExp(`${season}x${e}`, 'i'),
+                            new RegExp(`E${e}`, 'i'),
+                            new RegExp(`Episode\\s*${episode}`, 'i')
+                        ];
+
+                        for (const pattern of patterns) {
+                            const match = srtEntries.find(entry => pattern.test(entry.name));
+                            if (match) {
+                                selectedEntry = match;
+                                break;
+                            }
+                        }
+                    }
+
+                    console.log(`[Proxy] Extracting RAR entry: ${selectedEntry.name}`);
+                    const extracted = extractor.extract({ files: [selectedEntry.name] });
+                    if (extracted.files[0].extraction) {
+                        buffer = Buffer.from(extracted.files[0].extraction);
+                    }
+                }
+            } catch (e) {
+                console.error("RAR Unpack error:", e.message);
+                return null;
+            }
+        }
+
+        // 2. ZIP Extraction
         if ((buffer[0] === 0x50 && buffer[1] === 0x4B) || url.toLowerCase().includes('.zip') || contentType.includes('zip')) {
             try {
                 const zip = new AdmZip(buffer);
@@ -59,7 +106,6 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
                 const srtEntries = zipEntries.filter(entry => entry.entryName.toLowerCase().endsWith('.srt'));
 
                 if (srtEntries.length > 1 && season !== undefined && episode !== undefined) {
-                    // Multi-episode pack detected. Try to find the specific episode.
                     const s = String(season).padStart(2, '0');
                     const e = String(episode).padStart(2, '0');
                     const patterns = [
@@ -79,7 +125,7 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
                         console.log(`[Proxy] Identified episode ${sStr}${eStr} inside ZIP: ${bestEntry.entryName}`);
                         buffer = bestEntry.getData();
                     } else {
-                        buffer = srtEntries[0].getData(); // Fallback
+                        buffer = srtEntries[0].getData();
                     }
                 } else if (srtEntries.length > 0) {
                     buffer = srtEntries[0].getData();

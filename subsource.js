@@ -35,8 +35,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             return [];
         }
 
+        const limit = config.subsourceLimit || 5;
         const subtitles = response.data.subtitles
             .filter(sub => sub.lang === lang || sub.lang === 'Arabic' || sub.lang === 'ara')
+            .slice(0, limit)
             .map(sub => ({
                 id: `subsource-${sub.id || Math.random().toString(36).substr(2, 7)}`,
                 url: sub.url,
@@ -44,7 +46,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                 title: `[SubSource] ${sub.title || title}`
             }));
 
-        console.log(`[SubSource] Found ${subtitles.length} results`);
+        console.log(`[SubSource] Found ${subtitles.length} results (Limit: ${limit})`);
         return subtitles;
 
     } catch (e) {

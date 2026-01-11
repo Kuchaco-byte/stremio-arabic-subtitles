@@ -35,8 +35,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             return [];
         }
 
+        const limit = config.subdlLimit || 5;
         const subtitles = response.data.subtitles
             .filter(sub => sub.lang === lang || sub.lang === 'Arabic')
+            .slice(0, limit)
             .map(sub => ({
                 id: `subdl-${sub.id || Math.random().toString(36).substr(2, 7)}`,
                 url: sub.url,
@@ -44,7 +46,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                 title: `[SubDL] ${sub.title || title}`
             }));
 
-        console.log(`[SubDL] Found ${subtitles.length} results`);
+        console.log(`[SubDL] Found ${subtitles.length} results (Limit: ${limit})`);
         return subtitles;
 
     } catch (e) {

@@ -112,6 +112,8 @@ module.exports = {
         const lang = config.lang || "ara";
         const osCount = parseInt(config.osCount) || 5;
         const ytsCount = parseInt(config.ytsCount) || 3;
+        const subdlLimit = parseInt(config.subdlLimit) || 5;
+        const subsourceLimit = parseInt(config.subsourceLimit) || 5;
         const subdlKey = config.subdlKey || "";
         const subsourceKey = config.subsourceKey || "";
 
