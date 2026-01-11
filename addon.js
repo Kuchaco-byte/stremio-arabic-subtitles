@@ -119,7 +119,8 @@ function deduplicateSubtitles(subtitles) {
 
         // If size is present, it makes the fingerprint strict. 
         // If size is missing, we rely on title match only.
-        const key = `${normTitle}|${sizeInfo}`;
+        const providerInfo = sub.source || "";
+        const key = `${normTitle}|${sizeInfo}|${providerInfo}`;
 
         if (!unique.has(key)) {
             unique.set(key, sub);
@@ -252,6 +253,7 @@ module.exports = {
 
             for (const srcLang of sourceLanguages) {
                 if (srcLang === lang) continue;
+                console.log(`[Addon] AI: Searching for source: ${srcLang}`);
 
                 const sourcePromises = activeProviders.map(async (p) => {
                     try {
@@ -260,7 +262,8 @@ module.exports = {
                             const meta = await metaPromise;
                             movieTitle = (meta && meta.data && meta.data.meta && meta.data.meta.name) || "";
                         }
-                        return await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, srcLang, config);
+                        const res = await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, srcLang, config);
+                        return Array.isArray(res) ? res : [];
                     } catch (e) { return []; }
                 });
 
@@ -268,8 +271,9 @@ module.exports = {
                 let currentLangSubs = [];
 
                 sourceResults.forEach((res, index) => {
-                    if (res.status === 'fulfilled' && Array.isArray(res.value)) {
+                    if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
                         const pName = activeProviders[index].name;
+                        console.log(`[Addon] AI: Provider ${pName} found ${res.value.length} subs for ${srcLang}`);
                         const subsWithSource = res.value.map(s => ({ ...s, source: pName }));
                         currentLangSubs = currentLangSubs.concat(subsWithSource);
                     }
@@ -278,7 +282,8 @@ module.exports = {
                 if (currentLangSubs.length > 0) {
                     foundSourceSubs = currentLangSubs;
                     foundLang = srcLang;
-                    break; // Found a valid source, stop looking
+                    console.log(`[Addon] AI: Found total ${foundSourceSubs.length} source subs in ${foundLang}`);
+                    break;
                 }
             }
 
