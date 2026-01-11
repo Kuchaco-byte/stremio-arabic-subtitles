@@ -7,13 +7,13 @@ WORKDIR /usr/src/app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (only production)
+RUN npm install --production
 
 # Copy application source
 COPY . .
 
-# Expose port (Render/Heroku usually use dynamic ports, but good to document)
+# Expose port
 EXPOSE 7000
 
 # Start command

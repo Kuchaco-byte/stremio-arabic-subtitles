@@ -195,9 +195,6 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
                     return str; // Early exit on parser failure
                 }
 
-                // Add a visible AI Marker to the subtitle for verification
-                const aiMarker = `0\n00:00:00,500 --> 00:00:01,800\n🤖 ST+ AI Translated [${translateTo.toUpperCase()}]\n\n`;
-
                 const srtArray = parser.fromSrt(str);
 
                 // Map Stremio ISO 639-2 codes to Google Translate ISO 639-1
@@ -274,6 +271,10 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
                     // Rebuild SRT
                     str = parser.toSrt(srtArray);
+
+                    // Add a visible AI Marker to the subtitle for verification
+                    const aiMarker = `0\n00:00:00,500 --> 00:00:01,800\n🤖 ST+ AI Translated [${translateTo.toUpperCase()}]\n\n`;
+                    str = aiMarker + str;
 
                     // Cache the result (TTL: 7 days - translations don't change often)
                     cache.set(transCacheKey, str, 604800);

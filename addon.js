@@ -14,31 +14,20 @@ const subsource = require("./subsource");
 const cache = require("./cache");
 
 const manifest = {
-    "id": "org.antigravity.stplus.v102",
+    "id": "org.stplus.v1",
     "version": "1.0.0",
-    "name": "ST+",
-    "description": "Supported Subs (YTS, OS, SubDL, SubSource) - Ordered byGlobal Ranking .",
-    "logo": "https://stremio-arabic-subtitles-1.onrender.com/logo.png",
+    "name": "ST+ Arabic",
+    "description": "Multi-provider Arabic subtitles",
+    "logo": "http://127.0.0.1:7000/logo.png",
     "behaviorHints": {
         "configurable": true,
-        "configurationURL": "https://arabic-subtitles-pro.onrender.com/configure"
+        "configurationURL": "http://127.0.0.1:7000/configure"
     },
-    "resources": [
-        "subtitles"
-    ],
-    "languages": ["all"], // Enable all languages to support dynamic selection
-    "types": [
-        "movie",
-        "series"
-    ],
-    "catalogs": []
+    "resources": ["subtitles"],
+    "types": ["movie", "series"]
 };
 
-// Helper to get Base URL
 function getBaseUrl() {
-    if (process.env.RENDER_EXTERNAL_URL) {
-        return process.env.RENDER_EXTERNAL_URL;
-    }
     return "http://127.0.0.1:7000";
 }
 
@@ -144,6 +133,10 @@ module.exports = {
         const subsourceLimit = parseInt(config.subsourceLimit) || 5;
         const subdlKey = config.subdlKey || "";
         const subsourceKey = config.subsourceKey || "";
+        const autoTranslate = config.autoTranslate === true || config.autoTranslate === 'true';
+
+        console.log(`[Addon] --- Subtitle Request ---`);
+        console.log(`[Addon] Type: ${type} | ID: ${id} | Lang: ${lang} | AI: ${autoTranslate}`);
 
         const imdbId = id.split(":")[0];
         const extra = id.split(":").slice(1);
@@ -154,10 +147,9 @@ module.exports = {
             episode = parseInt(extra[1]);
         }
 
-        // UNIQUE ID per Episode to prevent Stremio cache collision
         const uniqueMediaId = id.replace(/:/g, '_');
 
-        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${osCount}:${ytsCount}:${config.autoTranslate || false}`;
+        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${osCount}:${ytsCount}:${autoTranslate}`;
         const cachedResults = cache.get(cacheKey);
 
         const baseUrl = getBaseUrl();
@@ -203,6 +195,7 @@ module.exports = {
         providerResults.forEach((res, index) => {
             const pName = activeProviders[index].name;
             if (res.status === 'fulfilled' && Array.isArray(res.value)) {
+                console.log(`[Addon] Provider ${pName} found ${res.value.length} results.`);
                 // Increased buffer to 40 to allow for extensive deduplication "replacement"
                 const subtitles = res.value.slice(0, 40).map((s, i) => {
                     if (s.url) {
@@ -243,8 +236,8 @@ module.exports = {
 
         // 3. Smart Auto-Translation Fallback
         // Trigger if we have few results (less than 3)
-        if (ranked.length < 3 && config.autoTranslate === true && lang !== "eng") {
-            console.log(`[Addon] Low/No results for ${lang} (${ranked.length}). AI Fallback Enabled.`);
+        if (ranked.length < 3 && autoTranslate && lang !== "eng") {
+            console.log(`[Addon] Triggering AI Fallback. Current Results: ${ranked.length}, Target Lang: ${lang}`);
 
             // Priority List: English -> Spanish -> French -> German
             const sourceLanguages = ["eng", "spa", "fre", "ger"];

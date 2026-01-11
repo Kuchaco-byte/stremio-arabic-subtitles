@@ -48,9 +48,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                 rows.each((i, el) => {
                     const text = $(el).text().trim();
                     if (epPattern.test(text)) {
-                        const link = $(el).find(`a[href*="/search/sublanguageid-${lang}/"]`).first().attr('href');
+                        // Look for ANY link containing the language or ID
+                        const link = $(el).find('a[href*="/search/sublanguageid-"]').first().attr('href') || $(el).find('a').first().attr('href');
                         console.log(`[OpenSubtitles] Found matching row text: ${text.substring(0, 50)}... Link: ${link}`);
-                        if (link) {
+                        if (link && !link.includes('facebook') && !link.includes('twitter')) {
                             selectionLink = link;
                             return false;
                         }
@@ -71,9 +72,12 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                     }
                 });
                 $ = cheerio.load(response.data);
-                rows = $('#search_results tr[id^="name"]');
+                // Broad selector: try specific then generic
+                rows = $('#search_results tr[id^="name"], #search_results tr.change, table.dt tr[id^="name"], table.dt tr.change');
+                if (rows.length === 0) rows = $('tr[id^="name"], tr.change');
+
                 hasDirectLinks = rows.find('a[href*="/subtitleserve/sub/"]').length > 0;
-                console.log(`[OpenSubtitles] After redirect, found ${rows.length} result rows, hasDirectLinks: ${hasDirectLinks}`);
+                console.log(`[OpenSubtitles] After redirect, found ${rows.length} rows, hasDirectLinks: ${hasDirectLinks}`);
             }
         }
 

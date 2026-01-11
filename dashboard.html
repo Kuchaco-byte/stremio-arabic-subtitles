@@ -444,17 +444,18 @@
                 autoTranslate: document.getElementById('autoTranslate').checked
             };
 
-            const configStr = btoa(JSON.stringify(config));
+            const configStr = btoa(JSON.stringify(config))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
 
-            let domain = window.location.host;
-            let protocol = window.location.protocol;
+            let origin = window.location.origin;
 
-            if (!domain || domain === "" || protocol === 'file:') {
-                domain = "127.0.0.1:7000";
-                protocol = "http:";
+            if (!origin || origin.includes('file://')) {
+                origin = "http://127.0.0.1:7000";
             }
 
-            return `${protocol}//${domain}/${configStr}/manifest.json`;
+            return `${origin}/${configStr}/manifest.json`;
         }
 
         function installAddon() {
@@ -466,12 +467,21 @@
 
         function initFromUrl() {
             try {
-                const path = window.location.pathname;
-                const parts = path.split('/');
-                const configStr = parts.length > 2 ? parts[1] : null;
+                const urlParams = new URLSearchParams(window.location.search);
+                // Priority 1: Query Param ?config=
+                let configStr = urlParams.get('config');
 
-                if (configStr && !configStr.includes('configure') && configStr.length > 5) {
-                    const decoded = atob(configStr);
+                // Priority 2: Path-based /BASE64/configure
+                if (!configStr) {
+                    const path = window.location.pathname;
+                    const configMatch = path.match(/\/([^\/]+)\/configure/);
+                    configStr = configMatch ? configMatch[1] : null;
+                }
+
+                if (configStr && configStr.length > 5) {
+                    // Handle URL-safe conversion
+                    const normalized = configStr.replace(/-/g, '+').replace(/_/g, '/');
+                    const decoded = atob(normalized);
                     if (decoded.trim().startsWith('{')) {
                         const config = JSON.parse(decoded);
                         if (config.lang) document.getElementById('lang').value = config.lang;
