@@ -3,8 +3,11 @@ const AdmZip = require("adm-zip");
 const iconv = require("iconv-lite");
 const zlib = require("zlib");
 const unrar = require("node-unrar-js");
+const translatte = require("translatte");
+const { Parser } = require("srt-parser-2");
+const cache = require("./cache"); // Import cache module
 
-async function downloadSubtitle(url, season, episode, refererHint, provider, userLang = "ara") {
+async function downloadSubtitle(url, season, episode, refererHint, provider, userLang = "ara", translateTo = null) {
     const sStr = season !== undefined ? `S${season}` : "Movie";
     const eStr = episode !== undefined ? `E${episode}` : "";
     console.log(`Downloading subtitle: ${url} (${sStr}${eStr}) | Provider: ${provider}`);
@@ -167,6 +170,100 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
         str = str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
         if (!str.endsWith('\n')) str += '\n';
         if (arabicRegex.test(str) && !str.startsWith('\uFEFF')) str = '\uFEFF' + str;
+
+        // 4. On-the-fly Translation (If Requested)
+        if (translateTo && translateTo !== "eng" && translateTo.length === 3) {
+
+            // CACHE CHECK
+            // We use a prefix to distinguish translation cache from addon results
+            const transCacheKey = `trans_v2:${url}:${translateTo}`;
+            const cachedTrans = cache.get(transCacheKey);
+            if (cachedTrans) {
+                console.log(`[Proxy] Translation Cache HIT for ${translateTo}`);
+                return cachedTrans;
+            }
+
+            console.log(`[Proxy] Translating subtitle to: ${translateTo}`);
+            try {
+                const parser = new Parser();
+                const srtArray = parser.fromSrt(str);
+
+                // Map Stremio ISO 639-2 codes to Google Translate ISO 639-1
+                const langMap = {
+                    "ara": "ar", "fre": "fr", "spa": "es", "ger": "de", "ita": "it",
+                    "rus": "ru", "tur": "tr", "por": "pt", "dut": "nl", "chi": "zh",
+                    "per": "fa", "pol": "pl", "hin": "hi", "tam": "ta", "tel": "te",
+                    "mal": "ml", "kor": "ko", "jap": "ja", "heb": "iw", "cze": "cs"
+                };
+                const targetLang = langMap[translateTo];
+
+                if (targetLang && srtArray.length > 0) {
+
+                    // Optimization: Batching strategies
+                    // Google Translate usually handles up to ~5000 chars. We play it safe with 3000.
+                    // We also limit lines per batch to avoid massive payloads.
+                    const batches = [];
+                    let currentBatch = [];
+                    let currentCharCount = 0;
+                    const MAX_CHARS = 3000;
+                    const MAX_LINES = 80;
+
+                    for (const item of srtArray) {
+                        const textLen = item.text.length;
+                        if (currentBatch.length > 0 && (currentCharCount + textLen > MAX_CHARS || currentBatch.length >= MAX_LINES)) {
+                            batches.push(currentBatch);
+                            currentBatch = [];
+                            currentCharCount = 0;
+                        }
+                        currentBatch.push(item);
+                        currentCharCount += textLen;
+                    }
+                    if (currentBatch.length > 0) batches.push(currentBatch);
+
+                    console.log(`[Proxy] Total Batches: ${batches.length} | Target: ${targetLang}`);
+
+                    // Process in parallel with concurrency limit
+                    // We use a simple chunking for concurrency (e.g., 5 at a time)
+                    const CONCURRENCY = 5;
+                    const processedBatches = [];
+
+                    for (let i = 0; i < batches.length; i += CONCURRENCY) {
+                        const chunk = batches.slice(i, i + CONCURRENCY);
+                        const promises = chunk.map(async (batch, batchIdx) => {
+                            const texts = batch.map(item => item.text.replace(/\r\n/g, " \n "));
+                            // Use a safer separator
+                            const separator = " <<<>>> ";
+                            const joinedText = texts.join(separator);
+
+                            try {
+                                const res = await translatte(joinedText, { to: targetLang });
+                                // Split using the separator
+                                const translatedParts = res.text.split(" <<<>>> ");
+
+                                for (let j = 0; j < batch.length; j++) {
+                                    if (translatedParts[j]) {
+                                        // Restore newlines and trim
+                                        batch[j].text = translatedParts[j].trim().replace(/ \n /g, "\n");
+                                    }
+                                }
+                            } catch (err) {
+                                console.error(`[Translation] Batch failed: ${err.message}`);
+                            }
+                        });
+                        await Promise.all(promises);
+                    }
+
+                    // Rebuild SRT
+                    str = parser.toSrt(srtArray);
+
+                    // Cache the result (TTL: 7 days - translations don't change often)
+                    cache.set(transCacheKey, str, 604800);
+                }
+            } catch (e) {
+                console.error("[Proxy] Translation Error:", e.message);
+                // Return original if translation fails
+            }
+        }
 
         return str;
 

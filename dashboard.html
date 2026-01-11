@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="pageTitle">إعدادات ST+</title>
+    <title data-i18n="pageTitle">ST+ Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -237,7 +237,7 @@
                 alt="Logo" style="width: 50px; height: 50px;">
             <div style="text-align: left;">
                 <h1 data-i18n="title" style="margin: 0; font-size: 2rem; line-height: 1;">ST+</h1>
-                <div class="version" style="font-size: 0.8rem; opacity: 0.7; margin-top: 5px;">v2.3.0</div>
+                <div class="version" style="font-size: 0.8rem; opacity: 0.7; margin-top: 5px;">v1.0.0</div>
             </div>
         </div>
         <p data-i18n="subtitle">Multi-Language Subtitles</p>
@@ -316,6 +316,13 @@
                     على مفتاحك من هنا</a>
             </div>
 
+            <!-- Auto Translate Checkbox -->
+            <div class="setting-item" style="margin-top: 1rem; display: flex; align-items: center;">
+                <input type="checkbox" id="autoTranslate" style="width: 20px; height: 20px; margin: 0 10px 0 0;">
+                <label for="autoTranslate" data-i18n="lblAutoTranslate" style="margin: 0; cursor: pointer;">تفعيل
+                    الترجمة التلقائية (AI) عند عدم توفر ترجمات</label>
+            </div>
+
         </div>
 
         <button id="mainBtn" class="install-btn" onclick="installAddon()" data-i18n="btnInstall">تثبيت الإضافة</button>
@@ -332,7 +339,7 @@
                 // This ensures "ST+" is treated as an LTR block inside the Arabic RTL context.
                 pageTitle: "إعدادات \u202AST+\u202C",
                 title: "<span dir='ltr'>ST+</span>",
-                subtitle: "ترجمات متعددة اللغات - v2.3.0",
+                subtitle: "ترجمات متعددة اللغات - v1.0.0",
                 feature1: "⚡ نظام ترتيب ذكي (Fuzzy Match)",
                 feature2: "🎯 دعم شامل: SubSource, SubDL, OpenSubtitles, YTS",
                 lblMoreSubs: "للحصول على مزيد من الترجمات:",
@@ -344,13 +351,14 @@
                 lblSubsourceLimit: "نتائج SubSource:",
                 lblSubsourceKey: "مفتاح SubSource (اختياري):",
                 linkGetKey: "🔗 احصل على مفتاحك من هنا",
+                lblAutoTranslate: "تفعيل الترجمة التلقائية (AI) عند عدم توفر ترجمات",
                 btnInstall: "تثبيت الإضافة",
                 footer: "مدعوم بواسطة Stremio Addon SDK"
             },
             en: {
                 pageTitle: "ST+ Settings",
                 title: "ST+",
-                subtitle: "Multi-Language Subtitles - v2.3.0",
+                subtitle: "Multi-Language Subtitles - v1.0.0",
                 feature1: "⚡ Smart Ranking System (Fuzzy Match)",
                 feature2: "🎯 Supports: SubSource, SubDL, OpenSubtitles, YTS",
                 lblMoreSubs: "For more subtitles:",
@@ -362,13 +370,14 @@
                 lblSubsourceLimit: "SubSource Results:",
                 lblSubsourceKey: "SubSource API Key (Optional):",
                 linkGetKey: "🔗 Get your key here",
+                lblAutoTranslate: "Enable AI Auto-Translation (if no subtitles found)",
                 btnInstall: "Install Addon",
                 footer: "Powered by Stremio Addon SDK"
             },
             zh: {
                 pageTitle: "ST+ 设置",
                 title: "ST+",
-                subtitle: "多语言字幕 - v2.3.0",
+                subtitle: "多语言字幕 - v1.0.0",
                 feature1: "⚡ 智能排序系统 (模糊匹配)",
                 feature2: "🎯 支持: SubSource, SubDL, OpenSubtitles, YTS",
                 lblMoreSubs: "获取更多字幕:",
@@ -380,6 +389,7 @@
                 lblSubsourceLimit: "SubSource 结果数:",
                 lblSubsourceKey: "SubSource API 密钥 (可选):",
                 linkGetKey: "🔗 在此获取密钥",
+                lblAutoTranslate: "启用 AI 自动翻译（如果没有找到字幕）",
                 btnInstall: "安装扩展",
                 footer: "由 Stremio Addon SDK 强力驱动"
             }
@@ -427,9 +437,11 @@
                 osCount: osCount,
                 ytsCount: ytsCount,
                 subdlLimit: subdlLimit,
+                subdlLimit: subdlLimit,
                 subsourceLimit: subsourceLimit,
                 subdlKey: subdlKey,
-                subsourceKey: subsourceKey
+                subsourceKey: subsourceKey,
+                autoTranslate: document.getElementById('autoTranslate').checked
             };
 
             const configStr = btoa(JSON.stringify(config));
@@ -470,6 +482,7 @@
 
                         if (config.subdlKey) document.getElementById('subdlKey').value = config.subdlKey;
                         if (config.subsourceKey) document.getElementById('subsourceKey').value = config.subsourceKey;
+                        if (config.autoTranslate) document.getElementById('autoTranslate').checked = true;
                     }
                 }
             } catch (e) { console.log('Parsed config error', e); }

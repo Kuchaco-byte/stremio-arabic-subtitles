@@ -152,10 +152,36 @@ function serveManifest(req, res) {
         // Unique ID with version and hourly salt for cache busting
         const hourSalt = Math.floor(Date.now() / 3600000);
         const configHash = `${config.lang}_${config.osCount}_${config.ytsCount}`;
-        manifest.id = `org.antigravity.arabicsubtitles.v${manifest.version.replace(/\./g, '')}h${hourSalt}.${configHash}`;
+        manifest.id = `org.antigravity.stplus.v${manifest.version.replace(/\./g, '')}h${hourSalt}.${configHash}`;
 
-        if (config.lang !== "ara") {
-            manifest.name = `Arabic Subtitles Pro (${config.lang.toUpperCase()})`;
+        // Dynamic Name and Description
+        const langCode = config.lang || "ara";
+        const langNameMap = {
+            "ara": "Arabic", "eng": "English", "fre": "French", "spa": "Spanish",
+            "ger": "German", "ita": "Italian", "rus": "Russian", "tur": "Turkish",
+            "por": "Portuguese", "dut": "Dutch", "chi": "Chinese"
+        };
+        const langName = langNameMap[langCode] || langCode.toUpperCase();
+
+        manifest.name = `ST+ (${langName})`;
+
+        // Dynamic Description
+        const descriptions = {
+            "ara": "الترجمات المدعومة (YTS, OS, SubDL, SubSource) - مرتبة حسب التصنيف العالمي.",
+            "eng": "Supported Subs (YTS, OS, SubDL, SubSource) - Ordered by Global Ranking.",
+            "fre": "Sous-titres supportés (YTS, OS, SubDL, SubSource) - Classés par rang mondial.",
+            "spa": "Subtítulos soportados (YTS, OS, SubDL, SubSource) - Ordenados por ranking global.",
+            "ger": "Unterstützte Untertitel (YTS, OS, SubDL, SubSource) - Sortiert nach globalem Ranking.",
+            "ita": "Sottotitoli supportati (YTS, OS, SubDL, SubSource) - Ordinati per classifica globale.",
+            "rus": "Поддерживаемые субтитры (YTS, OS, SubDL, SubSource) - Сортировка по мировому рейтингу.",
+            "tur": "Desteklenen Altyazılar (YTS, OS, SubDL, SubSource) - Küresel Sıralamaya Göre Sıralı.",
+            "por": "Legendas suportadas (YTS, OS, SubDL, SubSource) - Ordenadas por classificação global.",
+            "dut": "Ondersteunde ondertitels (YTS, OS, SubDL, SubSource) - Gesorteerd op wereldwijde ranglijst.",
+            "chi": "支持的字幕 (YTS, OS, SubDL, SubSource) - 按全球排名排序。"
+        };
+        manifest.description = descriptions[langCode] || descriptions["eng"];
+
+        if (manifest.languages) {
             manifest.languages = [config.lang];
         }
 
@@ -196,11 +222,11 @@ app.get("/:config/subtitles/:type/:id/:extra.json", configMiddleware, handleSubt
 
 // 3. Proxy Route
 app.get("/proxy/subtitle", async (req, res) => {
-    const { url, season, episode, referer, provider, lang } = req.query;
+    const { url, season, episode, referer, provider, lang, translate } = req.query;
     if (!url) return res.status(400).send("Missing URL");
 
     try {
-        const subtitleContent = await downloadSubtitle(url, season, episode, referer, provider, lang);
+        const subtitleContent = await downloadSubtitle(url, season, episode, referer, provider, lang, translate);
         if (!subtitleContent) return res.status(404).send("Subtitle not found");
 
         res.setHeader("Content-Type", "application/x-subrip; charset=utf-8");

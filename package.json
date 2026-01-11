@@ -1,6 +1,6 @@
 {
   "name": "arabic-subtitles-pro",
-  "version": "1.10.0",
+  "version": "1.0.0",
   "description": "Stremio Arabic Subtitles Addon",
   "main": "server.js",
   "scripts": {
@@ -14,8 +14,10 @@
     "iconv-lite": "^0.7.2",
     "localtunnel": "^2.0.2",
     "named-queue": "^2.2.1",
+    "node-unrar-js": "^2.0.0",
+    "srt-parser-2": "^1.2.3",
     "stremio-addon-sdk": "^1.6.10",
     "string-similarity": "^4.0.4",
-    "node-unrar-js": "^2.0.0"
+    "translatte": "^3.0.1"
   }
 }

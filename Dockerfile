@@ -1,4 +1,5 @@
-FROM node:22-slim
+# Updated for v1.0.0
+FROM node:22
 
 # Set working directory
 WORKDIR /usr/src/app

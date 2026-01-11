@@ -67,7 +67,8 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                 id: `subsource-${sub.id || Math.random().toString(36).substr(2, 7)}`,
                 url: sub.url,
                 lang: lang, // Return requested code
-                title: `[SubSource] ${sub.title || title}`
+                title: `[SubSource] ${sub.title || title}`,
+                size: sub.size || "" // Pass file size if available
             }));
 
         console.log(`[SubSource] Found ${subtitles.length} results (Limit: ${limit})`);
