@@ -146,13 +146,14 @@ function serveManifest(req, res) {
         manifest.logo = `${domain}/logo.png`;
 
         if (manifest.behaviorHints) {
-            manifest.behaviorHints.configurationURL = `${domain}/configure`;
+            // Point back to the specific config URL so the user can edit their settings from Stremio
+            manifest.behaviorHints.configurationURL = `${domain}/${req.params.config}/configure`;
         }
 
-        // Unique ID with version and hourly salt for cache busting
-        const hourSalt = Math.floor(Date.now() / 3600000);
+        // Unique ID: Constant for the same config to support updates, but distinct for different languages
+        // REMOVED hourSalt to ensure ID stability. ID should only change if Version or Config changes.
         const configHash = `${config.lang}_${config.osCount}_${config.ytsCount}`;
-        manifest.id = `org.antigravity.stplus.v${manifest.version.replace(/\./g, '')}h${hourSalt}.${configHash}`;
+        manifest.id = `org.antigravity.stplus.v${manifest.version.replace(/\./g, '')}.${configHash}`;
 
         // Dynamic Name and Description
         const langCode = config.lang || "ara";

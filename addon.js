@@ -334,6 +334,22 @@ module.exports = {
             }
         }
 
+        // 4. Final Fallback: If absolutely no results, return a "No Subtitles Found" Dummy
+        // This prevents Stremio from disabling the language in the UI, allowing the user to see the attempt.
+        if (ranked.length === 0) {
+            console.log(`[Addon] No subtitles found for ${lang} (Native or AI). Returning Dummy.`);
+            ranked.push({
+                id: `no_subs_${uniqueMediaId}`,
+                url: "data:text/vtt;base64,V0VCVlRUCgo=", // Empty VTT
+                lang: lang,
+                title: `❌ No subtitles found for ${lang}`,
+                originalTitle: "No Result",
+                fileSize: "0",
+                source: "System",
+                rankScore: 0
+            });
+        }
+
         return { subtitles: ranked.slice(0, 40) }; // Global Smart Sort, Top 40 Unique
     }
 };
