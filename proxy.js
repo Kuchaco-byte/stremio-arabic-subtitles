@@ -199,10 +199,13 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
                 // Map Stremio ISO 639-2 codes to Google Translate ISO 639-1
                 const langMap = {
-                    "ara": "ar", "fre": "fr", "spa": "es", "ger": "de", "ita": "it",
-                    "rus": "ru", "tur": "tr", "por": "pt", "dut": "nl", "chi": "zh",
-                    "per": "fa", "pol": "pl", "hin": "hi", "tam": "ta", "tel": "te",
-                    "mal": "ml", "kor": "ko", "jap": "ja", "heb": "iw", "cze": "cs"
+                    "ara": "ar", "eng": "en", "fre": "fr", "spa": "es", "ger": "de",
+                    "ita": "it", "rus": "ru", "tur": "tr", "por": "pt", "dut": "nl",
+                    "chi": "zh", "zho": "zh", "jpn": "ja", "kor": "ko", "hin": "hi",
+                    "ben": "bn", "tam": "ta", "tel": "te", "mal": "ml", "kan": "kn",
+                    "swe": "sv", "nor": "no", "fin": "fi", "dan": "da", "pol": "pl",
+                    "cze": "cs", "hun": "hu", "rom": "ro", "gre": "el", "heb": "iw",
+                    "tha": "th", "ind": "id", "may": "ms", "vie": "vi"
                 };
                 const targetLang = langMap[translateTo];
 

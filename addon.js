@@ -235,12 +235,13 @@ module.exports = {
         ranked = deduplicateSubtitles(ranked);
 
         // 3. Smart Auto-Translation Fallback
-        // Trigger if we have few results (less than 3)
-        if (ranked.length < 3 && autoTranslate && lang !== "eng") {
-            console.log(`[Addon] Triggering AI Fallback. Current Results: ${ranked.length}, Target Lang: ${lang}`);
+        // Trigger if we have few results (3 or less) and autoTranslate is enabled
+        if (ranked.length <= 3 && autoTranslate) {
+            console.log(`[Addon] Triggering AI Fallback for ${lang}. Current Results: ${ranked.length}`);
 
-            // Priority List: English -> Spanish -> French -> German
-            const sourceLanguages = ["eng", "spa", "fre", "ger"];
+            // Source priority: English is usually the most complete source for ANY target lang.
+            // If target is English, we try Spanish/French/German.
+            const sourceLanguages = lang === "eng" ? ["spa", "fre", "ger"] : ["eng", "spa", "fre"];
             let foundSourceSubs = [];
             let foundLang = "";
 
@@ -255,8 +256,7 @@ module.exports = {
                             const meta = await metaPromise;
                             movieTitle = (meta && meta.data && meta.data.meta && meta.data.meta.name) || "";
                         }
-                        const res = await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, srcLang, config);
-                        return Array.isArray(res) ? res : [];
+                        return await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, srcLang, config);
                     } catch (e) { return []; }
                 });
 
@@ -266,7 +266,6 @@ module.exports = {
                 sourceResults.forEach((res, index) => {
                     if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
                         const pName = activeProviders[index].name;
-                        console.log(`[Addon] AI: Provider ${pName} found ${res.value.length} subs for ${srcLang}`);
                         const subsWithSource = res.value.map(s => ({ ...s, source: pName }));
                         currentLangSubs = currentLangSubs.concat(subsWithSource);
                     }
@@ -282,13 +281,12 @@ module.exports = {
 
             if (foundSourceSubs.length > 0) {
                 const rankedSource = rankSubtitles(foundSourceSubs, filename);
-                // We SKIP strict deduplication here because OpenSubtitles often returns matches 
-                // with identical names but different sub IDs, and the user wants to see 3 options.
-                const top3 = rankedSource.slice(0, 3);
+                // Expand to 10 results as requested
+                const top10 = rankedSource.slice(0, 10);
 
-                console.log(`[Addon] AI: Preparing to translate top ${top3.length} results.`);
+                console.log(`[Addon] AI: Preparing to translate top ${top10.length} results from ${foundLang} to ${lang}.`);
 
-                const translatedResults = top3.map((s, i) => {
+                const translatedResults = top10.map((s, i) => {
                     if (s.url) {
                         const cb = Math.floor(Date.now() / 3600000);
                         let proxyUrl = `${baseUrl}/proxy/subtitle?url=${encodeURIComponent(s.url)}&cb=${cb}&provider=${encodeURIComponent(s.source || "Unknown")}&lang=${encodeURIComponent(foundLang)}`;
@@ -315,8 +313,11 @@ module.exports = {
                     return null;
                 }).filter(s => s);
 
-                // Append AI results instead of overwriting
-                ranked = ranked.concat(translatedResults);
+                // Filter out translations that might already be in 'ranked' by title
+                const existingTitles = new Set(ranked.map(r => r.originalTitle.toLowerCase().replace(/[^a-z0-9]/g, "")));
+                const uniqueTranslations = translatedResults.filter(t => !existingTitles.has(t.originalTitle.toLowerCase().replace(/[^a-z0-9]/g, "")));
+
+                ranked = ranked.concat(uniqueTranslations);
             }
         }
 
@@ -339,6 +340,5 @@ module.exports = {
         cache.set(cacheKey, ranked);
 
         return { subtitles: ranked.slice(0, 40) };
-        // Global Smart Sort, Top 40 Unique
     }
 };
