@@ -1,6 +1,7 @@
 /**
  * AI Translation Service for ST+
  * Decoupled logic for finding source subtitles and generating AI result objects.
+ * Features "Stealth Fetch": finds high-quality English sources even if not selected.
  */
 
 const { getLanguageName } = require("./languages");
@@ -9,27 +10,24 @@ async function handleAIFallback(params) {
     const {
         type, id, filename, lang, config,
         activeProviders, metaPromise,
-        rankedNative, uniqueMediaId, baseUrl
+        rankedNative, uniqueMediaId, baseUrl,
+        season, episode
     } = params;
 
     const imdbId = id.split(":")[0];
-    const extra = id.split(":").slice(1);
-    let season = 0, episode = 0;
-    if (type === 'series' && extra.length >= 2) {
-        season = parseInt(extra[0]);
-        episode = parseInt(extra[1]);
-    }
 
     console.log(`[AI-Service] Triggering for ${lang}. Native count: ${rankedNative.length}`);
+    console.log(`[AI-Service] Stealth search for S:${season} E:${episode}`);
 
-    // Source priority: English is usually the most complete source for ANY target lang.
+    // Source priority: English is the "Gold Standard" source for any translation.
+    // We search English even if the user didn't select it in their dashboard.
     const sourceLanguages = lang === "eng" ? ["spa", "fre", "ger"] : ["eng", "spa", "fre"];
     let foundSourceSubs = [];
     let foundLang = "";
 
     for (const srcLang of sourceLanguages) {
         if (srcLang === lang) continue;
-        console.log(`[AI-Service] Searching for source: ${srcLang}`);
+        console.log(`[AI-Service] Stealth searching for source: ${srcLang}`);
 
         const sourcePromises = activeProviders.map(async (p) => {
             try {
@@ -38,8 +36,12 @@ async function handleAIFallback(params) {
                     const meta = await metaPromise;
                     movieTitle = (meta && meta.data && meta.data.meta && meta.data.meta.name) || "";
                 }
+                // Pass season and episode from params (passed from addon.js)
                 return await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, srcLang, config);
-            } catch (e) { return []; }
+            } catch (e) {
+                console.error(`[AI-Service] Provider ${p.name} failed for ${srcLang}:`, e.message);
+                return [];
+            }
         });
 
         const sourceResults = await Promise.allSettled(sourcePromises);
@@ -56,24 +58,29 @@ async function handleAIFallback(params) {
         if (currentLangSubs.length > 0) {
             foundSourceSubs = currentLangSubs;
             foundLang = srcLang;
-            console.log(`[AI-Service] Found ${foundSourceSubs.length} source subs in ${foundLang}`);
+            console.log(`[AI-Service] Successfully found ${foundSourceSubs.length} source subs in ${foundLang}`);
             break;
         }
     }
 
-    if (foundSourceSubs.length === 0) return [];
+    if (foundSourceSubs.length === 0) {
+        console.log(`[AI-Service] No source subtitles found in any stealth language.`);
+        return [];
+    }
 
-    // Re-rank sources based on filename match
-    const { rankSubtitles } = require("./addon-helpers"); // Circular ref safety
-    const rankedSource = rankSubtitles(foundSourceSubs, filename);
+    // Re-rank sources based on filename match using the central helper
+    const { rankSubtitles } = require("./addon-helpers");
+    const rankedSource = rankSubtitles(foundSourceSubs, filename, foundLang);
 
-    // Take top 10 as requested
+    // Take top 10 as requested by the user
     const top10 = rankedSource.slice(0, 10);
     const targetName = getLanguageName(lang);
     const srcName = getLanguageName(foundLang);
 
     return top10.map((s, i) => {
-        const cb = Math.floor(Date.now() / 3600000);
+        const cb = Math.floor(Date.now() / 3600000); // 1-hour cache busting
+
+        // Construct the proxy URL
         let proxyUrl = `${baseUrl}/proxy/subtitle?url=${encodeURIComponent(s.url)}&cb=${cb}&provider=${encodeURIComponent(s.source || "Unknown")}&lang=${encodeURIComponent(foundLang)}`;
         if (s.referer) proxyUrl += `&referer=${encodeURIComponent(s.referer)}`;
         proxyUrl += `&season=${season}&episode=${episode}`;

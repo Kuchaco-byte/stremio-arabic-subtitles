@@ -136,17 +136,40 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
             } catch (e) { console.error("Unzip error:", e.message); return null; }
         }
 
-        // Decode to UTF-8
+        // Decode to UTF-8 or Language-Specific Encodings
         let str = "";
-        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\FB50-\uFDFF\uFE70-\uFEFF]/;
         const utf8Str = buffer.toString('utf8');
+        const hasReplacementChar = utf8Str.includes('\uFFFD');
 
-        if (arabicRegex.test(utf8Str) && !utf8Str.includes('\uFFFD')) {
+        const { getEncodings } = require("./languages");
+        const langEncodings = getEncodings(userLang);
+
+        // Heuristic: Check for common characters in non-UTF8 encodings
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\FB50-\uFDFF\uFE70-\uFEFF]/;
+        const cyrillicRegex = /[\u0400-\u04FF]/;
+
+        if (!hasReplacementChar && (userLang !== 'ara' || arabicRegex.test(utf8Str))) {
             str = utf8Str;
+            console.log(`[Proxy] Decoded as UTF-8`);
         } else {
-            str = iconv.decode(buffer, 'win1256');
-            if (!arabicRegex.test(str)) str = iconv.decode(buffer, 'iso-8859-6');
-            if (!arabicRegex.test(str)) str = utf8Str; // Fallback
+            // Try language-specific encodings from the model
+            console.log(`[Proxy] UTF-8 failed or suspect. Trying model encodings: ${langEncodings}`);
+            for (const enc of langEncodings) {
+                const decoded = iconv.decode(buffer, enc);
+                // Validation: does it look like the target language?
+                if (userLang === "ara" && arabicRegex.test(decoded)) {
+                    str = decoded;
+                    console.log(`[Proxy] Decoded as ${enc}`);
+                    break;
+                }
+                if (userLang === "rus" && cyrillicRegex.test(decoded)) {
+                    str = decoded;
+                    break;
+                }
+                // Generic fallback if it's the first non-utf8 encoding in the list
+                if (!str) str = decoded;
+            }
+            if (!str) str = utf8Str; // absolute fallback
         }
 
         // Smart Logic: Single Warning

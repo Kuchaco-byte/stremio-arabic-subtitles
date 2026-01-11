@@ -1,6 +1,6 @@
 {
   "name": "arabic-subtitles-pro",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Stremio Arabic Subtitles Addon",
   "main": "server.js",
   "scripts": {

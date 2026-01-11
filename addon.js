@@ -40,8 +40,16 @@ module.exports = {
         console.log(`[Addon] --- Subtitle Request ---`);
         console.log(`[Addon] Type: ${type} | ID: ${id} | Lang: ${lang} | AI: ${autoTranslate}`);
 
-        const imdbId = id.split(":")[0];
+        const parts = id.split(":");
+        const imdbId = parts[0];
+        let season = 0, episode = 0;
+        if (type === 'series' && parts.length >= 3) {
+            season = parseInt(parts[1]);
+            episode = parseInt(parts[2]);
+        }
+
         const uniqueMediaId = id.replace(/:/g, '_');
+        console.log(`[Addon] IMDB: ${imdbId} | S: ${season} | E: ${episode}`);
 
         // Cache Key
         const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${config.osCount}:${config.ytsCount}:${autoTranslate}`;
@@ -79,7 +87,7 @@ module.exports = {
                     const meta = await metaPromise;
                     movieTitle = (meta && meta.data && meta.data.meta && meta.data.meta.name) || "";
                 }
-                const subs = await p.handler.getSubtitles(type, imdbId, movieTitle, 0, 0, lang, config);
+                const subs = await p.handler.getSubtitles(type, imdbId, movieTitle, season, episode, lang, config);
                 return subs.map(s => ({ ...s, source: p.name }));
             } catch (e) { return []; }
         });
@@ -99,7 +107,8 @@ module.exports = {
                 type, id, filename, lang, config,
                 activeProviders, metaPromise,
                 rankedNative: ranked,
-                uniqueMediaId, baseUrl
+                uniqueMediaId, baseUrl,
+                season, episode
             });
 
             if (aiResults && aiResults.length > 0) {
