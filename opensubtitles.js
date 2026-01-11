@@ -48,7 +48,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                 rows.each((i, el) => {
                     const text = $(el).text().trim();
                     if (epPattern.test(text)) {
-                        const link = $(el).find('a[href*="/search/sublanguageid-ara/"]').first().attr('href');
+                        const link = $(el).find(`a[href*="/search/sublanguageid-${lang}/"]`).first().attr('href');
                         console.log(`[OpenSubtitles] Found matching row text: ${text.substring(0, 50)}... Link: ${link}`);
                         if (link) {
                             selectionLink = link;
@@ -57,7 +57,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                     }
                 });
             } else {
-                selectionLink = rows.find('a[href*="/search/sublanguageid-ara/"]').first().attr('href') || rows.find('a[href*="idmovie-"]').first().attr('href');
+                selectionLink = rows.find(`a[href*="/search/sublanguageid-${lang}/"]`).first().attr('href') || rows.find('a[href*="idmovie-"]').first().attr('href');
                 console.log(`[OpenSubtitles] Movie selection link: ${selectionLink}`);
             }
 
@@ -67,7 +67,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                 response = await axios.get(nextUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Cookie': 'Language=ar'
+                        'Cookie': `Language=${lang.substring(0, 2)}`
                     }
                 });
                 $ = cheerio.load(response.data);
@@ -88,7 +88,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
 
             if (downloadLink && relName) {
                 const subId = downloadLink.split('/').pop();
-                const directLink = `https://dl.opensubtitles.org/ar/download/sub/${subId}`;
+                const directLink = `https://dl.opensubtitles.org/${lang.substring(0, 2)}/download/sub/${subId}`;
 
                 const relNameLower = relName.toLowerCase();
                 // If we have title parts, check relevance. Otherwise, assume relevant if it's an episode page or movie search.
@@ -103,7 +103,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                 subtitles.push({
                     id: `os-${i}-${Math.random().toString(36).substr(2, 5)}`,
                     url: directLink,
-                    lang: 'ara',
+                    lang: lang,
                     title: relName.trim()
                 });
             }
