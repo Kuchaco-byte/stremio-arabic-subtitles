@@ -234,11 +234,14 @@ module.exports = {
             }
         });
 
+        // Rank and Sort
+        let ranked = rankSubtitles(allSubtitles, filename);
+
         // Apply Smart Deduplication (Filter duplicates, keeping highest rank)
         ranked = deduplicateSubtitles(ranked);
 
         // 3. Smart Auto-Translation Fallback
-        // Trigger if we have very few results (less than 2) to ensure user gets AI variants even with stray native matches
+        // Trigger if we have very few results (less than 2)
         if (ranked.length < 2 && config.autoTranslate === true && lang !== "eng") {
             console.log(`[Addon] Low/No results for ${lang} (${ranked.length}). AI Fallback Enabled.`);
 
@@ -264,9 +267,11 @@ module.exports = {
                 const sourceResults = await Promise.allSettled(sourcePromises);
                 let currentLangSubs = [];
 
-                sourceResults.forEach((res) => {
+                sourceResults.forEach((res, index) => {
                     if (res.status === 'fulfilled' && Array.isArray(res.value)) {
-                        currentLangSubs = currentLangSubs.concat(res.value);
+                        const pName = activeProviders[index].name;
+                        const subsWithSource = res.value.map(s => ({ ...s, source: pName }));
+                        currentLangSubs = currentLangSubs.concat(subsWithSource);
                     }
                 });
 
@@ -292,7 +297,7 @@ module.exports = {
                         proxyUrl += `&season=${season}&episode=${episode}`;
                         proxyUrl += `&translate=${encodeURIComponent(lang)}`;
 
-                        const providerTag = (s.source === "OpenSubtitles") ? "OS" : (s.source || "UNK");
+                        const providerTag = s.source === "OpenSubtitles" ? "OS" : (s.source || "UNK");
                         const cleanTitle = s.title.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
                         const srcLangCap = foundLang.charAt(0).toUpperCase() + foundLang.slice(1);
                         const displayTitle = `🤖 [AI] (${srcLangCap}) [${providerTag}] ${cleanTitle}`;
