@@ -6,42 +6,8 @@ const BASE_URL = "https://yts-subs.com";
 async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") {
     if (type !== 'movie') return [];
 
-    const langMap = {
-        "ara": "arabic",
-        "eng": "english",
-        "fre": "french",
-        "spa": "spanish",
-        "ger": "german",
-        "ita": "italian",
-        "rus": "russian",
-        "tur": "turkish",
-        "por": "portuguese",
-        "dut": "dutch",
-        "chi": "chinese",
-        "jpn": "japanese",
-        "kor": "korean",
-        "hin": "hindi",
-        "ben": "bengali",
-        "tam": "tamil",
-        "tel": "telugu",
-        "mal": "malayalam",
-        "kan": "kannada",
-        "swe": "swedish",
-        "nor": "norwegian",
-        "fin": "finnish",
-        "dan": "danish",
-        "pol": "polish",
-        "cze": "czech",
-        "hun": "hungarian",
-        "rom": "romanian",
-        "gre": "greek",
-        "heb": "hebrew",
-        "tha": "thai",
-        "ind": "indonesian",
-        "may": "malay",
-        "vie": "vietnamese"
-    };
-    const targetLang = langMap[lang] || "arabic"; // Default to arabic if code not found
+    const { getYIFYCode } = require("./languages");
+    const targetLang = getYIFYCode(lang);
 
     console.log(`YTS-Subs searching for: ${imdbId} | Lang: ${targetLang}`);
 

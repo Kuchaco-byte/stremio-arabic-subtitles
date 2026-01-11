@@ -15,67 +15,8 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
         const subsourceKey = config.subsourceKey || "";
         const baseUrl = "https://subsource.strem.top";
 
-        // Map Stremio ISO 639-2 to SubSource codes (full english lowercase usually)
-        const langMap = {
-            "ara": "arabic",
-            "eng": "english",
-            "fre": "french",
-            "spa": "spanish",
-            "ger": "german",
-            "ita": "italian",
-            "rus": "russian",
-            "tur": "turkish",
-            "por": "portuguese",
-            "dut": "dutch",
-            "chi": "chinese",
-            "zho": "chinese",
-            "jpn": "japanese",
-            "kor": "korean",
-            "hin": "hindi",
-            "ben": "bengali",
-            "tam": "tamil",
-            "tel": "telugu",
-            "mal": "malayalam",
-            "kan": "kannada",
-            "swe": "swedish",
-            "nor": "norwegian",
-            "fin": "finnish",
-            "dan": "danish",
-            "pol": "polish",
-            "cze": "czech",
-            "hun": "hungarian",
-            "rom": "romanian",
-            "gre": "greek",
-            "heb": "hebrew",
-            "tha": "thai",
-            "ind": "indonesian",
-            "may": "malay",
-            "vie": "vietnamese",
-            "jpn": "japanese",
-            "kor": "korean",
-            "hin": "hindi",
-            "ben": "bengali",
-            "tam": "tamil",
-            "tel": "telugu",
-            "mal": "malayalam",
-            "kan": "kannada",
-            "swe": "swedish",
-            "nor": "norwegian",
-            "fin": "finnish",
-            "dan": "danish",
-            "pol": "polish",
-            "cze": "czech",
-            "hun": "hungarian",
-            "rom": "romanian",
-            "gre": "greek",
-            "heb": "hebrew",
-            "tha": "thai",
-            "ind": "indonesian",
-            "may": "malay",
-            "vie": "vietnamese"
-        };
-
-        const targetLangName = langMap[lang] || "english";
+        const { getYIFYCode } = require("./languages");
+        const targetLangName = getYIFYCode(lang);
 
         // Default Config String
         // Pattern: [Key]/[Lang]/hiInclude/type:1,2,4/

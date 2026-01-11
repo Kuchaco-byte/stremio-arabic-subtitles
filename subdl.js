@@ -12,70 +12,8 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             id = `${imdbId}:${season}:${episode}`;
         }
 
-        const subdlKey = config.subdlKey || "";
-        const baseUrl = "https://subdl.strem.top";
-
-        // Map Stremio ISO 639-2 to SubDL codes (usually 2-letter ISO 639-1 in uppercase)
-        const langMap = {
-            "ara": "AR",
-            "eng": "EN",
-            "fre": "FR",
-            "spa": "ES",
-            "ger": "DE",
-            "ita": "IT",
-            "rus": "RU",
-            "tur": "TR",
-            "por": "PT",
-            "dut": "NL",
-            "chi": "ZH",
-            "zho": "ZH",
-            "jpn": "JA",
-            "kor": "KO",
-            "hin": "HI",
-            "ben": "BN",
-            "tam": "TA",
-            "tel": "TE",
-            "mal": "ML",
-            "kan": "KN",
-            "swe": "SV",
-            "nor": "NO",
-            "fin": "FI",
-            "dan": "DA",
-            "pol": "PL",
-            "cze": "CS",
-            "hun": "HU",
-            "rom": "RO",
-            "gre": "EL",
-            "heb": "HE",
-            "tha": "TH",
-            "ind": "ID",
-            "may": "MS",
-            "vie": "VI",
-            "jpn": "JA",
-            "kor": "KO",
-            "hin": "HI",
-            "ben": "BN",
-            "tam": "TA",
-            "tel": "TE",
-            "mal": "ML",
-            "kan": "KN",
-            "swe": "SV",
-            "nor": "NO",
-            "fin": "FI",
-            "dan": "DA",
-            "pol": "PL",
-            "cze": "CS",
-            "hun": "HU",
-            "rom": "RO",
-            "gre": "EL",
-            "heb": "HE",
-            "tha": "TH",
-            "ind": "ID",
-            "may": "MS",
-            "vie": "VI"
-        };
-
-        const targetLangCode = langMap[lang] || "EN"; // Default to EN if unknown
+        const { getSubDLCode } = require("./languages");
+        const targetLangCode = getSubDLCode(lang);
 
         // Default Config String for ST+ (generic)
         // We construct it dynamically based on the lang key

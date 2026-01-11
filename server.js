@@ -1,4 +1,5 @@
 const express = require("express");
+const { getLanguageName } = require("./languages");
 const addonInterface = require("./addon");
 const { downloadSubtitle } = require("./proxy");
 const fs = require("fs");
@@ -78,19 +79,10 @@ function serveManifest(req, res) {
         const host = req.get('host');
         const domain = `${protocol}://${host}`;
 
-        // Language Mapping for Manifest Labeling
-        const langNames = {
-            "ara": "Arabic", "eng": "English", "fre": "French", "spa": "Spanish", "ger": "German",
-            "ita": "Italian", "rus": "Russian", "tur": "Turkish", "por": "Portuguese", "dut": "Dutch",
-            "chi": "Chinese", "zho": "Chinese", "jpn": "Japanese", "kor": "Korean", "hin": "Hindi",
-            "ben": "Bengali", "tam": "Tamil", "tel": "Telugu", "mal": "Malayalam", "kan": "Kannada",
-            "swe": "Swedish", "nor": "Norwegian", "fin": "Finnish", "dan": "Danish", "pol": "Polish",
-            "cze": "Czech", "hun": "Hungarian", "rom": "Romanian", "gre": "Greek", "heb": "Hebrew",
-            "tha": "Thai", "ind": "Indonesian", "may": "Malay", "vie": "Vietnamese"
-        };
-        const activeLang = langNames[config.lang] || "Multi";
+        const activeLang = getLanguageName(config.lang);
 
         // Dynamic Manifest Branding
+        manifest.id = `org.stplus.cloud.v1.${config.lang}`; // DYNAMIC ID TO BYPASS CACHE
         manifest.name = `ST+ ${activeLang}`;
         manifest.description = `Multi-provider ${activeLang} subtitles`;
 
