@@ -273,6 +273,12 @@ app.get("/logo.png", (req, res) => {
     }
 });
 
+// Serve Static VTT (Empty/Error)
+app.get("/static/empty.vtt", (req, res) => {
+    res.setHeader("Content-Type", "text/vtt; charset=utf-8");
+    res.send("WEBVTT\n\n00:00:01.000 --> 00:00:05.000\n❌ No subtitles found.");
+});
+
 // 5. Connectivity
 app.get("/ping", (req, res) => res.json({ status: "alive" }));
 

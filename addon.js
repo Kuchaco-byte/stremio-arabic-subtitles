@@ -340,7 +340,7 @@ module.exports = {
             console.log(`[Addon] No subtitles found for ${lang} (Native or AI). Returning Dummy.`);
             ranked.push({
                 id: `no_subs_${uniqueMediaId}`,
-                url: "data:text/vtt;base64,V0VCVlRUCgo=", // Empty VTT
+                url: `${baseUrl}/static/empty.vtt`, // Static URL instead of Data URI
                 lang: lang,
                 title: `❌ No subtitles found for ${lang}`,
                 originalTitle: "No Result",
