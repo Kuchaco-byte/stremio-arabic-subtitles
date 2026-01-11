@@ -209,8 +209,8 @@ async function handleSubtitles(req, res) {
     }
 }
 
-app.get("/subtitles/:type/:id.json", (req, res, next) => { req.addonConfig = { lang: "ara", osCount: 5, ytsCount: 3 }; next(); }, handleSubtitles);
-app.get("/subtitles/:type/:id/:extra.json", (req, res, next) => { req.addonConfig = { lang: "ara", osCount: 5, ytsCount: 3 }; next(); }, handleSubtitles);
+app.get("/subtitles/:type/:id.json", (req, res, next) => { console.log("[Server] Direct JSON hit"); req.addonConfig = { lang: "ara", osCount: 5, ytsCount: 3 }; next(); }, handleSubtitles);
+app.get("/subtitles/:type/:id/:extra.json", (req, res, next) => { console.log("[Server] Direct JSON hit (Extra)"); req.addonConfig = { lang: "ara", osCount: 5, ytsCount: 3 }; next(); }, handleSubtitles);
 
 app.get("/:config/subtitles/:type/:id.json", configMiddleware, handleSubtitles);
 app.get("/:config/subtitles/:type/:id/:extra.json", configMiddleware, handleSubtitles);
@@ -218,6 +218,7 @@ app.get("/:config/subtitles/:type/:id/:extra.json", configMiddleware, handleSubt
 // 3. Proxy Route
 app.get("/proxy/subtitle", async (req, res) => {
     const { url, season, episode, referer, provider, lang, translate } = req.query;
+    console.log(`[Proxy] Request: ${provider} | Lang: ${lang} -> ${translate} | URL: ${url.substring(0, 50)}...`);
     if (!url) return res.status(400).send("Missing URL");
 
     try {

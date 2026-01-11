@@ -185,7 +185,19 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
             console.log(`[Proxy] Translating subtitle to: ${translateTo}`);
             try {
-                const parser = new Parser();
+                // Try different import patterns for srt-parser-2
+                let parser;
+                try {
+                    const P = require("srt-parser-2");
+                    parser = new (P.default || P)();
+                } catch (e) {
+                    console.error("[Proxy] Parser init failed:", e.message);
+                    return str; // Early exit on parser failure
+                }
+
+                // Add a visible AI Marker to the subtitle for verification
+                const aiMarker = `0\n00:00:00,500 --> 00:00:01,800\n🤖 ST+ AI Translated [${translateTo.toUpperCase()}]\n\n`;
+
                 const srtArray = parser.fromSrt(str);
 
                 // Map Stremio ISO 639-2 codes to Google Translate ISO 639-1
@@ -236,9 +248,11 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
                             const joinedText = texts.join(separator);
 
                             try {
+                                console.log(`[Translation] Batch ${i / CONCURRENCY + 1} size: ${joinedText.length} chars. Target: ${targetLang}`);
                                 const res = await translatte(joinedText, { to: targetLang });
                                 if (!res || !res.text || typeof res.text !== 'string') throw new Error("Invalid Translation Response");
 
+                                console.log(`[Translation] Batch ${i / CONCURRENCY + 1} Success. Start: ${res.text.substring(0, 50)}...`);
                                 // Split using the separator
                                 const translatedParts = res.text.split(" <<<>>> ");
 

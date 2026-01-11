@@ -1,5 +1,5 @@
-# Updated for v1.0.0
-FROM node:22
+# Production Dockerfile for ST+ v1.0.2
+FROM node:22-bullseye-slim
 
 # Set working directory
 WORKDIR /usr/src/app

@@ -1,7 +1,7 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 const VERSION = "1.0.0";
 const VERSION_NAME = "V1_FINAL";
-const CACHE_KEY_PREFIX = "v100";
+const CACHE_KEY_PREFIX = "v102";
 const axios = require("axios");
 const { fuzzyMatch } = require("./string-utils");
 const fs = require("fs");
@@ -14,7 +14,7 @@ const subsource = require("./subsource");
 const cache = require("./cache");
 
 const manifest = {
-    "id": "org.antigravity.stplus.v100",
+    "id": "org.antigravity.stplus.v102",
     "version": "1.0.0",
     "name": "ST+",
     "description": "Supported Subs (YTS, OS, SubDL, SubSource) - Ordered byGlobal Ranking .",
@@ -242,8 +242,8 @@ module.exports = {
         ranked = deduplicateSubtitles(ranked);
 
         // 3. Smart Auto-Translation Fallback
-        // Trigger if we have very few results (less than 2)
-        if (ranked.length < 2 && config.autoTranslate === true && lang !== "eng") {
+        // Trigger if we have few results (less than 3)
+        if (ranked.length < 3 && config.autoTranslate === true && lang !== "eng") {
             console.log(`[Addon] Low/No results for ${lang} (${ranked.length}). AI Fallback Enabled.`);
 
             // Priority List: English -> Spanish -> French -> German
@@ -288,11 +288,12 @@ module.exports = {
             }
 
             if (foundSourceSubs.length > 0) {
-                console.log(`[Addon] AI: Found ${foundSourceSubs.length} source subs. preparing translation...`);
-
                 const rankedSource = rankSubtitles(foundSourceSubs, filename);
-                const dedupedSource = deduplicateSubtitles(rankedSource);
-                const top3 = dedupedSource.slice(0, 3);
+                // We SKIP strict deduplication here because OpenSubtitles often returns matches 
+                // with identical names but different sub IDs, and the user wants to see 3 options.
+                const top3 = rankedSource.slice(0, 3);
+
+                console.log(`[Addon] AI: Preparing to translate top ${top3.length} results.`);
 
                 const translatedResults = top3.map((s, i) => {
                     if (s.url) {
@@ -305,7 +306,7 @@ module.exports = {
                         const providerTag = s.source === "OpenSubtitles" ? "OS" : (s.source || "UNK");
                         const cleanTitle = s.title.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
                         const srcLangCap = foundLang.charAt(0).toUpperCase() + foundLang.slice(1);
-                        const displayTitle = `🤖 [AI] (${srcLangCap}) [${providerTag}] ${cleanTitle}`;
+                        const displayTitle = `🤖 [AI] (${srcLangCap}) [${providerTag}] ${cleanTitle} #${i + 1}`;
 
                         return {
                             id: `sub_trans_${foundLang}_i${i}_${uniqueMediaId}`,
