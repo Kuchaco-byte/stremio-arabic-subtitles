@@ -79,7 +79,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
 
         const subtitles = [];
         const seriesTitleParts = title ? title.toLowerCase().split(/\s+/).filter(p => p.length > 2) : [];
-        const isEpisodePage = selectionLink && selectionLink.includes('imdbid-') && type === 'series';
+        const isEpisodePage = (selectionLink && selectionLink.includes('imdbid-') && type === 'series') || (imdbId.startsWith('tt') && type === 'series');
 
         rows.each((i, el) => {
             const downloadLink = $(el).find('a[href*="/subtitleserve/sub/"]').attr('href');
