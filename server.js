@@ -228,7 +228,13 @@ app.get("/proxy/subtitle", async (req, res) => {
 
     try {
         const subtitleContent = await downloadSubtitle(url, season, episode, referer, provider, lang, translate);
-        if (!subtitleContent) return res.status(404).send("Subtitle not found");
+        if (!subtitleContent) {
+            // Return a VTT error instead of 404 text so the user sees the error in the player
+            res.setHeader("Content-Type", "text/vtt; charset=utf-8");
+            res.setHeader("Content-Disposition", 'attachment; filename="error.vtt"');
+            res.send(`WEBVTT\n\n00:00:01.000 --> 00:00:10.000\n❌ Error: Subtitle failed to download (Source ${provider || "Unknown"} returned empty).`);
+            return;
+        }
 
         res.setHeader("Content-Type", "application/x-subrip; charset=utf-8");
         res.setHeader("Content-Disposition", 'attachment; filename="subtitle.srt"');
@@ -236,7 +242,9 @@ app.get("/proxy/subtitle", async (req, res) => {
 
     } catch (e) {
         console.error("Proxy route error:", e.message);
-        res.status(500).send("Error: " + e.message);
+        res.setHeader("Content-Type", "text/vtt; charset=utf-8");
+        res.setHeader("Content-Disposition", 'attachment; filename="error.vtt"');
+        res.send(`WEBVTT\n\n00:00:01.000 --> 00:00:10.000\n❌ System Error: ${e.message}`);
     }
 });
 

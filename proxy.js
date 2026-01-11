@@ -237,6 +237,8 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
                             try {
                                 const res = await translatte(joinedText, { to: targetLang });
+                                if (!res || !res.text || typeof res.text !== 'string') throw new Error("Invalid Translation Response");
+
                                 // Split using the separator
                                 const translatedParts = res.text.split(" <<<>>> ");
 
@@ -244,6 +246,9 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
                                     if (translatedParts[j]) {
                                         // Restore newlines and trim
                                         batch[j].text = translatedParts[j].trim().replace(/ \n /g, "\n");
+                                    } else {
+                                        // Fallback if split failed for this part
+                                        // console.warn("[Translation] Missing part for index " + j);
                                     }
                                 }
                             } catch (err) {
