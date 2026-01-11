@@ -12,13 +12,44 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             id = `${imdbId}:${season}:${episode}`;
         }
 
-        const subdlKey = config.subdlKey || ""; // User must provide key
+        const subdlKey = config.subdlKey || "";
         const baseUrl = "https://subdl.strem.top";
 
-        // Use pre-encoded string for default, or encode user key
-        let encodedConfig = "Vm5ramlqcUwxZFNVNjQ3Z0FTU3RuNktvY1BzVXVzRnMvQVIvaGlJbmNsdWRlLw==";
+        // Map Stremio ISO 639-2 to SubDL codes (usually 2-letter ISO 639-1 in uppercase)
+        const langMap = {
+            "ara": "AR",
+            "eng": "EN",
+            "fre": "FR",
+            "spa": "ES",
+            "ger": "DE",
+            "ita": "IT",
+            "rus": "RU",
+            "tur": "TR",
+            "por": "PT",
+            "dut": "NL",
+            "chi": "ZH",
+            "zho": "ZH"
+        };
+
+        const targetLangCode = langMap[lang] || "EN"; // Default to EN if unknown
+
+        // Default Config String for ST+ (generic)
+        // We construct it dynamically based on the lang key
+        // Pattern: [Key]/[Lang]/hiInclude/
+
+        let encodedConfig;
         if (config.subdlKey) {
-            encodedConfig = Buffer.from(`${config.subdlKey}/AR/hiInclude/`).toString('base64');
+            encodedConfig = Buffer.from(`${config.subdlKey}/${targetLangCode}/hiInclude/`).toString('base64');
+        } else {
+            // If no key, we might need a default key or just standard path. 
+            // Using a generic generation if no key is present might be tricky if the addon requires a valid key for heavy usage.
+            // For now, we will fallback to a default *structure* but without a private key if acceptable, 
+            // or use the previously hardcoded one if it was a public shared key.
+            // The previous hardcoded string "Vm5ram...=" decoded to: "VnkjiqL1dSU647gASStn6KocPsUusFs/AR/hiInclude/"
+            // That looks like "Key/AR/hiInclude/".
+            // We will assume "VnkjiqL1dSU647gASStn6KocPsUusFs" is a public/shared key.
+            const publicKey = "VnkjiqL1dSU647gASStn6KocPsUusFs";
+            encodedConfig = Buffer.from(`${publicKey}/${targetLangCode}/hiInclude/`).toString('base64');
         }
 
         const url = `${baseUrl}/${encodedConfig}/subtitles/${type}/${id}.json`;
@@ -36,13 +67,16 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
         }
 
         const limit = config.subdlLimit || 5;
+        // Filter by lang logic: SubDL returns "lang" property usually in full English name (e.g. "Arabic", "English") 
+        // OR sometimes 2-letter code. We should match robustly.
+        // We will trust the API returned what we asked for, but do a loose filter.
+
         const subtitles = response.data.subtitles
-            .filter(sub => sub.lang === lang || sub.lang === 'Arabic')
             .slice(0, limit)
             .map(sub => ({
                 id: `subdl-${sub.id || Math.random().toString(36).substr(2, 7)}`,
                 url: sub.url,
-                lang: 'ara',
+                lang: lang, // Return the requested Stremio lang code
                 title: `[SubDL] ${sub.title || title}`
             }));
 

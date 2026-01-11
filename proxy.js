@@ -4,7 +4,7 @@ const iconv = require("iconv-lite");
 const zlib = require("zlib");
 const unrar = require("node-unrar-js");
 
-async function downloadSubtitle(url, season, episode, refererHint, provider) {
+async function downloadSubtitle(url, season, episode, refererHint, provider, userLang = "ara") {
     const sStr = season !== undefined ? `S${season}` : "Movie";
     const eStr = episode !== undefined ? `E${episode}` : "";
     console.log(`Downloading subtitle: ${url} (${sStr}${eStr}) | Provider: ${provider}`);
@@ -148,8 +148,15 @@ async function downloadSubtitle(url, season, episode, refererHint, provider) {
 
         // Smart Logic: Single Warning
         const lineCount = (str.match(/ --> /g) || []).length;
-        if (lineCount < 200) {
-            const warningBlock = `9999\n00:00:02,000 --> 00:00:07,000\n⚠️ تحذير: هذه الترجمة قد تكون ناقصة أو دعائية\n\n`;
+        if (lineCount < 100) {
+            let warningText = "";
+            if (userLang === "ara") {
+                warningText = "⚠️ تحذير: هذه الترجمة قد تكون ناقصة أو دعائية";
+            } else {
+                warningText = "⚠️ Warning: This subtitle has a low line count (<100). It may be incomplete or promotional.";
+            }
+
+            const warningBlock = `9999\n00:00:02,000 --> 00:00:07,000\n${warningText}\n\n`;
             str = warningBlock + str;
         }
 

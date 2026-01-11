@@ -178,7 +178,7 @@ module.exports = {
                 const subtitles = res.value.slice(0, 20).map((s, i) => {
                     if (s.url) {
                         const cb = Math.floor(Date.now() / 3600000);
-                        let proxyUrl = `${baseUrl}/proxy/subtitle?url=${encodeURIComponent(s.url)}&cb=${cb}&provider=${encodeURIComponent(pName)}`;
+                        let proxyUrl = `${baseUrl}/proxy/subtitle?url=${encodeURIComponent(s.url)}&cb=${cb}&provider=${encodeURIComponent(pName)}&lang=${encodeURIComponent(lang)}`;
                         if (s.referer) proxyUrl += `&referer=${encodeURIComponent(s.referer)}`;
                         proxyUrl += `&season=${season}&episode=${episode}`;
 

@@ -196,11 +196,11 @@ app.get("/:config/subtitles/:type/:id/:extra.json", configMiddleware, handleSubt
 
 // 3. Proxy Route
 app.get("/proxy/subtitle", async (req, res) => {
-    const { url, season, episode, referer, provider } = req.query;
+    const { url, season, episode, referer, provider, lang } = req.query;
     if (!url) return res.status(400).send("Missing URL");
 
     try {
-        const subtitleContent = await downloadSubtitle(url, season, episode, referer, provider);
+        const subtitleContent = await downloadSubtitle(url, season, episode, referer, provider, lang);
         if (!subtitleContent) return res.status(404).send("Subtitle not found");
 
         res.setHeader("Content-Type", "application/x-subrip; charset=utf-8");

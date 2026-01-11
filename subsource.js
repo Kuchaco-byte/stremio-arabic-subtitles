@@ -12,13 +12,38 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             id = `${imdbId}:${season}:${episode}`;
         }
 
-        const subsourceKey = config.subsourceKey || ""; // User must provide key
+        const subsourceKey = config.subsourceKey || "";
         const baseUrl = "https://subsource.strem.top";
 
-        // Use pre-encoded string for default, or encode user key
-        let encodedConfig = "c2tfMDY5NWNlZWJkMmI0YmE4MGNlYmMzMDcxNWYzMTU5MzVkMjJjY2I0OWMyMDdjNzMwOWZmZjhiYzZiNjIyMzE1OS9hcmFiaWMvaGlJbmNsdWRlL3R5cGU6MSwyLDQv";
+        // Map Stremio ISO 639-2 to SubSource codes (full english lowercase usually)
+        const langMap = {
+            "ara": "arabic",
+            "eng": "english",
+            "fre": "french",
+            "spa": "spanish",
+            "ger": "german",
+            "ita": "italian",
+            "rus": "russian",
+            "tur": "turkish",
+            "por": "portuguese",
+            "dut": "dutch",
+            "chi": "chinese",
+            "zho": "chinese"
+        };
+
+        const targetLangName = langMap[lang] || "english";
+
+        // Default Config String
+        // Pattern: [Key]/[Lang]/hiInclude/type:1,2,4/
+
+        let encodedConfig;
         if (config.subsourceKey) {
-            encodedConfig = Buffer.from(`${config.subsourceKey}/arabic/hiInclude/type:1,2,4/`).toString('base64');
+            encodedConfig = Buffer.from(`${config.subsourceKey}/${targetLangName}/hiInclude/type:1,2,4/`).toString('base64');
+        } else {
+            // Fallback public key logic. 
+            // Previous: "c2tfMDY...=" -> "sk_0695ceebd2b4ba80cebc30715f315935d22ccb49c207c7309fff8bc6b6223159/arabic/hiInclude/type:1,2,4/"
+            const publicKey = "sk_0695ceebd2b4ba80cebc30715f315935d22ccb49c207c7309fff8bc6b6223159";
+            encodedConfig = Buffer.from(`${publicKey}/${targetLangName}/hiInclude/type:1,2,4/`).toString('base64');
         }
 
         const url = `${baseUrl}/${encodedConfig}/subtitles/${type}/${id}.json`;
@@ -37,12 +62,11 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
 
         const limit = config.subsourceLimit || 5;
         const subtitles = response.data.subtitles
-            .filter(sub => sub.lang === lang || sub.lang === 'Arabic' || sub.lang === 'ara')
             .slice(0, limit)
             .map(sub => ({
                 id: `subsource-${sub.id || Math.random().toString(36).substr(2, 7)}`,
                 url: sub.url,
-                lang: 'ara',
+                lang: lang, // Return requested code
                 title: `[SubSource] ${sub.title || title}`
             }));
 
