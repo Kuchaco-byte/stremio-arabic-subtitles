@@ -110,7 +110,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             return [];
         }
 
-        const limit = config.subdlLimit || 5;
+        const limit = config.subdlLimit || 20;
         // Filter by lang logic: SubDL returns "lang" property usually in full English name (e.g. "Arabic", "English") 
         // OR sometimes 2-letter code. We should match robustly.
         // We will trust the API returned what we asked for, but do a loose filter.

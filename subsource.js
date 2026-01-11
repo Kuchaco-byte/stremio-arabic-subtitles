@@ -104,7 +104,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             return [];
         }
 
-        const limit = config.subsourceLimit || 5;
+        const limit = config.subsourceLimit || 20;
         const subtitles = response.data.subtitles
             .slice(0, limit)
             .map(sub => ({

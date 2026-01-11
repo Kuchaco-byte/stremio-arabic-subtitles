@@ -156,7 +156,7 @@ module.exports = {
         // UNIQUE ID per Episode to prevent Stremio cache collision
         const uniqueMediaId = id.replace(/:/g, '_');
 
-        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${osCount}:${ytsCount}`;
+        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${osCount}:${ytsCount}:${config.autoTranslate || false}`;
         const cachedResults = cache.get(cacheKey);
 
         const baseUrl = getBaseUrl();

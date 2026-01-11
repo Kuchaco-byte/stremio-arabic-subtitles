@@ -69,13 +69,7 @@ function configMiddleware(req, res, next) {
             const decoded = atob(configStr);
             if (decoded.trim().startsWith('{')) {
                 const jsonConfig = JSON.parse(decoded);
-                config.lang = jsonConfig.lang || "ara";
-                config.osCount = parseInt(jsonConfig.osCount) || 5;
-                config.ytsCount = parseInt(jsonConfig.ytsCount) || 3;
-                config.subdlLimit = parseInt(jsonConfig.subdlLimit) || 5;
-                config.subsourceLimit = parseInt(jsonConfig.subsourceLimit) || 5;
-                config.subdlKey = jsonConfig.subdlKey || "";
-                config.subsourceKey = jsonConfig.subsourceKey || "";
+                config = { ...config, ...jsonConfig };
                 console.log("[Config] Loaded via JSON Base64");
             } else {
                 throw new Error("Not JSON");
