@@ -50,11 +50,21 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
         });
 
         // 4. Dorks / Relevance Keywords (Dynamic by Language)
+        // Dork matching (Dynamic Strength)
+        const langDorks = getDorks(lang);
         langDorks.forEach(dork => {
-            if (subTitle.includes(dork.toLowerCase())) {
-                score += 150;
+            if (subTitle.toLowerCase().includes(dork.toLowerCase())) {
+                score += 250; // Increased priority for dorks
             }
         });
+
+        // Exact Filename/Title Bonus
+        if (subTitle.toLowerCase() === fn.toLowerCase()) score += 500;
+
+        // Quality Tags
+        if (subTitle.includes("verified")) score += 100;
+        if (subTitle.includes("proper")) score += 100;
+        if (subTitle.includes("retail")) score += 100;
 
         // English defaults for everyone (universal dorks)
         const universalDorks = ["top rated", "best", "verified", "proper"];

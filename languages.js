@@ -1,78 +1,79 @@
 /**
- * Centralized Language Support for ST+
- * Contains Names, API Codes, Encoding Rules, and Search Dorks (Relevance Keywords)
+ * Centralized Language Support for ST+ (High-Performance Version)
+ * Contains localized dorks, encoding clusters, and provider-specific configurations.
+ * This file serves as the "Strength Model" for all languages.
  */
 
 const LANGUAGES = {
     "ara": {
         name: "Arabic", google: "ar", subdl: "AR", yify: "arabic", oscode: "ara",
-        encodings: ["windows-1256", "iso-8859-6"],
-        dorks: ["متوافقة", "حصري", "كاملة", "تعديل", "ضبط"]
+        encodings: ["windows-1256", "iso-8859-6", "utf-8"],
+        dorks: ["متوافقة", "حصري", "كاملة", "تعديل", "ضبط", "اهداء", "منقحة", "بلوراي"]
     },
     "eng": {
         name: "English", google: "en", subdl: "EN", yify: "english", oscode: "eng",
-        encodings: ["utf-8"],
-        dorks: ["top rated", "verified", "hi", "sdh", "proper", "re-synced"]
+        encodings: ["utf-8", "windows-1252"],
+        dorks: ["top rated", "verified", "hi", "sdh", "proper", "re-synced", "retail", "exact", "official"]
     },
     "fre": {
         name: "French", google: "fr", subdl: "FR", yify: "french", oscode: "fre",
-        encodings: ["windows-1252", "iso-8859-15"],
-        dorks: ["compatible", "complet", "officiel", "exclusif", "corrigé"]
+        encodings: ["windows-1252", "iso-8859-15", "utf-8"],
+        dorks: ["compatible", "complet", "officiel", "exclusif", "corrigé", "vff", "vfq", "french", "truefrench"]
     },
     "spa": {
         name: "Spanish", google: "es", subdl: "ES", yify: "spanish", oscode: "spa",
-        encodings: ["windows-1252", "iso-8859-1"],
-        dorks: ["compatible", "completo", "oficial", "exclusivo", "corregido"]
+        encodings: ["windows-1252", "iso-8859-1", "utf-8"],
+        dorks: ["compatible", "completo", "oficial", "exclusivo", "corregido", "castellano", "latino", "español"]
     },
     "ger": {
         name: "German", google: "de", subdl: "DE", yify: "german", oscode: "ger",
-        encodings: ["windows-1252", "iso-8859-1"],
-        dorks: ["kompatibel", "komplett", "offiziell", "exklusiv", "korrigiert"]
+        encodings: ["windows-1252", "iso-8859-1", "utf-8"],
+        dorks: ["kompatibel", "komplett", "offiziell", "exklusiv", "korrigiert", "deutsch", "german"]
     },
     "ita": {
         name: "Italian", google: "it", subdl: "IT", yify: "italian", oscode: "ita",
-        encodings: ["windows-1252", "iso-8859-1"],
-        dorks: ["compatibile", "completo", "ufficiale", "esclusivo", "corretto"]
+        encodings: ["windows-1252", "iso-8859-1", "utf-8"],
+        dorks: ["compatibile", "completo", "ufficiale", "esclusivo", "corretto", "italiano"]
     },
     "rus": {
         name: "Russian", google: "ru", subdl: "RU", yify: "russian", oscode: "rus",
-        encodings: ["windows-1251", "iso-8859-5"],
-        dorks: ["полный", "официальный", "эксклюзивный", "исправленный"]
+        encodings: ["windows-1251", "iso-8859-5", "utf-8"],
+        dorks: ["полный", "официальный", "эксклюзивный", "исправленный", "авторский", "чистый"]
     },
     "tur": {
         name: "Turkish", google: "tr", subdl: "TR", yify: "turkish", oscode: "tur",
-        encodings: ["windows-1254", "iso-8859-9"],
-        dorks: ["uyumlu", "tam", "resmi", "özel", "düzeltilmiş"]
+        encodings: ["windows-1254", "iso-8859-9", "utf-8"],
+        dorks: ["uyumlu", "tam", "resmi", "özel", "düzeltilmiş", "türkçe", "güncel"]
     },
     "por": {
         name: "Portuguese", google: "pt", subdl: "PT", yify: "portuguese", oscode: "por",
-        encodings: ["windows-1252", "iso-8859-1"],
-        dorks: ["compatível", "completo", "oficial", "exclusivo", "corrigido"]
+        encodings: ["windows-1252", "iso-8859-1", "utf-8"],
+        dorks: ["compatível", "completo", "oficial", "exclusivo", "corrigido", "br", "português"]
     },
     "dut": {
         name: "Dutch", google: "nl", subdl: "NL", yify: "dutch", oscode: "dut",
-        encodings: ["windows-1252", "iso-8859-1"],
-        dorks: ["geschikt", "volledig", "officieel", "exclusief", "gecorrigeerd"]
+        encodings: ["windows-1252", "iso-8859-1", "utf-8"],
+        dorks: ["geschikt", "volledig", "officieel", "exclusief", "gecorrigeerd", "nederlands"]
     },
     "chi": {
         name: "Chinese", google: "zh", subdl: "ZH", yify: "chinese", oscode: "chi",
-        encodings: ["gbk", "big5", "utf-8"],
-        dorks: ["完整", "官方", "独家", "修正"]
+        encodings: ["gbk", "gb2312", "big5", "utf-8"],
+        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字"]
     },
     "zho": {
         name: "Chinese", google: "zh", subdl: "ZH", yify: "chinese", oscode: "chi",
-        encodings: ["gbk", "big5", "utf-8"],
-        dorks: ["完整", "官方", "独家", "修正"]
+        encodings: ["gbk", "gb2312", "big5", "utf-8"],
+        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字"]
     },
     "jpn": {
         name: "Japanese", google: "ja", subdl: "JA", yify: "japanese", oscode: "jpn",
         encodings: ["shift-jis", "euc-jp", "utf-8"],
-        dorks: ["完全", "公式", "専売", "修正"]
+        dorks: ["完全", "公式", "専売", "修正", "日本語"]
     },
     "kor": {
         name: "Korean", google: "ko", subdl: "KO", yify: "korean", oscode: "kor",
         encodings: ["euc-kr", "utf-8"],
-        dorks: ["완전", "공식", "독점", "수정"]
+        dorks: ["완전", "공식", "독점", "수정", "한국어"]
     }
 };
 
