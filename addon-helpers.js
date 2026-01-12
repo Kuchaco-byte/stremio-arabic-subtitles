@@ -72,6 +72,10 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
             if (subTitle.includes(ud)) score += 80;
         });
 
+        // 5. SOURCE BOOST: OpenSubtitles Parity
+        // Since OpenSubtitles is the industry standard, we give it a reliability boost
+        if (sub.source === "OpenSubtitles") score += 150;
+
         if (subTitle.length < 5) score -= 50;
 
         sub.rankScore = score;

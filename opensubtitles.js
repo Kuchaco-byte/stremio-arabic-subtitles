@@ -70,10 +70,22 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                 const row = $(el);
                 const dlLink = row.find('a[href*="/subtitleserve/sub/"]').first().attr('href');
                 const titleLink = row.find('a[href*="/subtitles/"]').first().attr('href');
-                let relName = row.find('strong').text() || row.find('td[align="left"]').text() || "";
+
+                // CRITICAL IMPROVEMENT: Extract the REAL release name from the text nodes
+                // In OS, the title cell has <strong>Title</strong><br>Release Name<br>
+                const mainCell = row.find('td[id^="main"]');
+                let relName = "";
+
+                if (mainCell.length > 0) {
+                    relName = mainCell.contents().filter((i, el) => el.type === 'text' && $(el).text().trim().length > 5).first().text().trim();
+                }
+
+                if (!relName) {
+                    relName = row.find('strong').text() || row.find('td[align="left"]').text() || "";
+                }
 
                 if (!relName || relName.length < 5) {
-                    relName = row.text().split('\n').filter(t => t.trim().length > 5)[0] || "";
+                    relName = row.text().split('\n').filter(t => t.trim().length > 5 && !t.includes('MB'))[0] || "";
                 }
 
                 // Deduction logic: Extract ID from title link if download link cell is empty
@@ -135,7 +147,7 @@ async function performSearch(url, osLang) {
             'Referer': 'https://www.opensubtitles.org/',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
-            'Cookie': `Language=en; sublanguageid=${osLang}`
+            'Cookie': `Language=en; sublanguageid=${osLang}; pref_m_donations=1; pref_m_language=en`
         },
         timeout: 15000
     });
