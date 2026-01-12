@@ -94,8 +94,14 @@ module.exports = {
 
         const results = await Promise.allSettled(providerPromises);
         let allNative = [];
-        results.forEach(res => {
-            if (res.status === 'fulfilled') allNative = allNative.concat(res.value);
+        results.forEach((res, idx) => {
+            const providerName = activeProviders[idx].name;
+            if (res.status === 'fulfilled') {
+                console.log(`[Addon] Provider ${providerName} returned ${res.value.length} results.`);
+                allNative = allNative.concat(res.value);
+            } else {
+                console.error(`[Addon] Provider ${providerName} FAILED: ${res.reason}`);
+            }
         });
 
         // Rank & Deduplicate Native

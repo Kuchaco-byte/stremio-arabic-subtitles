@@ -10,92 +10,75 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
     const baseUrl = "https://www.opensubtitles.org";
 
     try {
-        const { getOSCode } = require("./languages");
+        const { getOSCode, getGoogleCode } = require("./languages");
         const osLang = getOSCode(lang);
+        const pathLang = getGoogleCode(lang) || osLang.substring(0, 2);
 
-        // STABILITY RULE: Always use /en/ path for search as localized paths are often broken in scraping.
-        // The language is controlled by the sublanguageid parameter.
-        let url = `${baseUrl}/en/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
-        console.log(`[OpenSubtitles] Requesting URL: ${url}`);
+        // Try localized path FIRST, then English as fallback if needed
+        const paths = [`/${pathLang}`, '/en'];
+        let response = null;
+        let $ = null;
 
-        let response;
-        try {
-            response = await performSearch(url, osLang);
-        } catch (err) {
-            console.error(`[OpenSubtitles] Primary search failed: ${err.message}`);
-            response = null;
+        for (const pathPrefix of paths) {
+            let url = `${baseUrl}${pathPrefix}/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
+            console.log(`[OpenSubtitles] Trying URL: ${url}`);
+            try {
+                response = await performSearch(url, osLang);
+                if (response && response.data) {
+                    $ = cheerio.load(response.data);
+                    if ($('#search_results tr[id^="name"]').length > 0 || $('a[href*="/idmovie-"]').length > 0) break;
+                }
+            } catch (e) { }
         }
-
-        let $ = response ? cheerio.load(response.data) : null;
 
         // 1. SELECTOR REFINEMENT: Handle results table and selection links
         let resultRows = $ ? $('#search_results tr[id^="name"], table.dt tr[id^="name"]') : [];
         let selectionLinks = $ ? $('a[href*="/idmovie-"], a[href*="/search/sublanguageid-"]').filter((i, el) => $(el).attr('href').includes('idmovie-')) : [];
 
-        // 2. AGGRESSIVE FALLBACK: If IMDB ID search returns 0 results, try Title Search (Arabic Strength model)
+        // 2. AGGRESSIVE FALLBACK: Title Search
         if (!resultRows.length && !selectionLinks.length && title) {
             const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, ' ');
             console.log(`[OpenSubtitles] Falling back to Title Search: ${cleanTitle}`);
             const query = encodeURIComponent(cleanTitle.trim());
-            url = `${baseUrl}/en/search2/sublanguageid-${osLang}/moviename-${query}`;
+            const url = `${baseUrl}/en/search2/sublanguageid-${osLang}/moviename-${query}`;
             try {
                 response = await performSearch(url, osLang);
                 $ = cheerio.load(response.data);
                 resultRows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
                 selectionLinks = $('a[href*="/idmovie-"], a[href*="/search/sublanguageid-"]').filter((i, el) => $(el).attr('href').includes('idmovie-'));
-            } catch (err) {
-                console.error(`[OpenSubtitles] Title fallback failed: ${err.message}`);
-            }
+            } catch (err) { }
         }
 
-        // 3. SELECTION REDIRECT HANDLING (Multi-movie selection)
+        // 3. SELECTION REDIRECT HANDLING
         if (!resultRows.length && selectionLinks.length > 0) {
-            console.log(`[OpenSubtitles] Selection page detected. Following first valid option.`);
             const nextLink = selectionLinks.first().attr('href');
-            const nextUrl = nextLink.startsWith('http') ? nextLink : `${baseUrl}${nextLink}`;
-            try {
-                response = await performSearch(nextUrl, osLang);
-                $ = cheerio.load(response.data);
-                resultRows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
-            } catch (err) {
-                console.error(`[OpenSubtitles] Selection following failed: ${err.message}`);
+            if (nextLink) {
+                const nextUrl = nextLink.startsWith('http') ? nextLink : `${baseUrl}${nextLink}`;
+                try {
+                    response = await performSearch(nextUrl, osLang);
+                    $ = cheerio.load(response.data);
+                    resultRows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
+                } catch (err) { }
             }
         }
 
         const subtitles = [];
 
-        // 4. ROBUST EXTRACTION: Deducing ID even if dlLink is missing from row (Scraping Hardened)
+        // 4. ROBUST EXTRACTION
         if (resultRows.length > 0) {
             resultRows.each((i, el) => {
                 const row = $(el);
                 const dlLink = row.find('a[href*="/subtitleserve/sub/"]').first().attr('href');
                 const titleLink = row.find('a[href*="/subtitles/"]').first().attr('href');
 
-                // CRITICAL IMPROVEMENT: Extract the REAL release name from the text nodes
-                // In OS, the title cell has <strong>Title</strong><br>Release Name<br>
-                const mainCell = row.find('td[id^="main"]');
-                let relName = "";
-
-                if (mainCell.length > 0) {
-                    relName = mainCell.contents().filter((i, el) => el.type === 'text' && $(el).text().trim().length > 5).first().text().trim();
-                }
-
-                if (!relName) {
-                    relName = row.find('strong').text() || row.find('td[align="left"]').text() || "";
-                }
+                let relName = row.find('td[id^="main"]').contents().filter((i, el) => el.type === 'text' && $(el).text().trim().length > 5).first().text().trim() ||
+                    row.find('strong').text() || row.find('td[align="left"]').text() || "";
 
                 if (!relName || relName.length < 5) {
                     relName = row.text().split('\n').filter(t => t.trim().length > 5 && !t.includes('MB'))[0] || "";
                 }
 
-                // Deduction logic: Extract ID from title link if download link cell is empty
-                let subId = "";
-                if (dlLink) {
-                    subId = dlLink.split('/').pop();
-                } else if (titleLink) {
-                    const idMatch = titleLink.match(/\/subtitles\/(\d+)\//);
-                    if (idMatch) subId = idMatch[1];
-                }
+                let subId = dlLink ? dlLink.split('/').pop() : (titleLink ? titleLink.match(/\/subtitles\/(\d+)\//)?.[1] : "");
 
                 if (subId) {
                     subtitles.push({
@@ -109,11 +92,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             });
         }
 
-        // 5. REDUNDANT SCRAPER (LAST RESORT): Regex scan the raw body for ANY download links
+        // 5. REGEX FALLBACK
         if (subtitles.length === 0 && response && response.data) {
             const rawLinks = response.data.match(/\/subtitleserve\/sub\/\d+/g);
             if (rawLinks) {
-                console.log(`[OpenSubtitles] Using Redundant Scraper (Found ${rawLinks.length} raw links)`);
                 const seenIds = new Set();
                 rawLinks.forEach(link => {
                     const subId = link.split('/').pop();
@@ -135,7 +117,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
         return subtitles.slice(0, 20);
 
     } catch (e) {
-        console.error("[OpenSubtitles] Fatal Error:", e.message);
+        console.error("[OpenSubtitles] Error:", e.message);
         return [];
     }
 }
