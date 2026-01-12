@@ -12,100 +12,109 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
         console.log(`[OpenSubtitles] Target Lang: ${lang} | OS Code: ${osLang} | Path: ${pathLang}`);
 
         // 1. PRIMARY SEARCH: Search by IMDB ID (Most accurate)
-        let url = `${baseUrl}/${pathLang}/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
+        // We always try /en/ first as it's the most stable path for searching on OS
+        let url = `${baseUrl}/en/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
+        console.log(`[OpenSubtitles] Requesting IMDB ID search: ${url}`);
+
         let response;
         try {
             response = await performSearch(url, osLang);
         } catch (err) {
-            console.log(`[OpenSubtitles] Primary search failed for ${lang}: ${err.message}`);
-            // Fallback to searching without the language-specific path if that failed
-            url = `${baseUrl}/en/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
-            response = await performSearch(url, osLang);
+            console.log(`[OpenSubtitles] IMDB search failed: ${err.message}. Trying Title Search...`);
+            response = null;
         }
 
         const cheerio = require("cheerio");
-        let $ = cheerio.load(response.data);
-        let resultRows = $('#search_results tr[id^="name"]');
+        let $ = response ? cheerio.load(response.data) : null;
 
-        let selectionRows = $('#search_results tr.change');
-        let hasDirectLinks = resultRows.length > 0 && resultRows.find('a[href*="/subtitleserve/sub/"]').length > 0;
-        let rows = hasDirectLinks ? resultRows : selectionRows;
+        // Check if we are on a results page, a selection page, or something else
+        let resultRows = $ ? $('#search_results tr[id^="name"], table.dt tr[id^="name"]') : [];
+        let selectionLinks = $ ? $('a[href*="/search/sublanguageid-"]').filter((i, el) => $(el).attr('href').includes('idmovie-')) : [];
 
-        // 2. PRIMARY FALLBACK: Title Search (If IMDB search yields no results OR search yields a selection that is empty)
-        if (rows.length === 0 && title) {
-            console.log(`[OpenSubtitles] IMDB search/selection returned 0 results for ${lang}. Falling back to Title Search: ${title}`);
-            const query = encodeURIComponent(title.replace(/[^a-zA-Z0-9\s]/g, ''));
-            url = `${baseUrl}/${pathLang}/search2/sublanguageid-${osLang}/moviename-${query}`;
-            response = await performSearch(url, osLang);
-            $ = cheerio.load(response.data);
-            resultRows = $('#search_results tr[id^="name"]');
-            selectionRows = $('#search_results tr.change');
-            hasDirectLinks = resultRows.length > 0 && resultRows.find('a[href*="/subtitleserve/sub/"]').length > 0;
-            rows = hasDirectLinks ? resultRows : selectionRows;
+        // 2. PRIMARY FALLBACK: Title Search (If IMDB search fails or returns nothing)
+        if ((!resultRows.length && !selectionLinks.length) && title) {
+            const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '');
+            console.log(`[OpenSubtitles] Falling back to Title Search: ${cleanTitle}`);
+            const query = encodeURIComponent(cleanTitle);
+            url = `${baseUrl}/en/search2/sublanguageid-${osLang}/moviename-${query}`;
+            try {
+                response = await performSearch(url, osLang);
+                $ = cheerio.load(response.data);
+                resultRows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
+                selectionLinks = $('a[href*="/search/sublanguageid-"]').filter((i, el) => $(el).attr('href').includes('idmovie-'));
+            } catch (err) {
+                console.log(`[OpenSubtitles] Title search failed: ${err.message}`);
+            }
         }
 
-        if (!hasDirectLinks && rows.length > 0) {
-            console.log(`[OpenSubtitles] No direct links, handling selection page...`);
+        // 3. SELECTION PAGE HANDLING (If we are on a page listing multiple movies/series)
+        if (!resultRows.length && selectionLinks.length > 0) {
+            console.log(`[OpenSubtitles] Selection page detected. Found ${selectionLinks.length} options.`);
             let selectionLink = null;
-            if (type === 'series') {
-                const sStr = season < 10 ? `0${season}` : season;
-                const eStr = episode < 10 ? `0${episode}` : episode;
-                const epPattern = new RegExp(`S${sStr}E${eStr}|${season}x${episode}`, 'i');
 
-                rows.each((i, el) => {
-                    if (epPattern.test($(el).text())) {
-                        selectionLink = $(el).find('a[href*="/search/sublanguageid-"]').first().attr('href') || $(el).find('a').first().attr('href');
-                        if (selectionLink) return false;
-                    }
-                });
+            if (type === 'series' && (season !== undefined || episode !== undefined)) {
+                // Try to find a link that matches the title or has some series indicator
+                selectionLink = selectionLinks.first().attr('href'); // Fallback to first
             } else {
-                selectionLink = rows.find(`a[href*="/search/sublanguageid-${osLang}/"]`).first().attr('href') ||
-                    rows.find('a[href*="idmovie-"]').first().attr('href') ||
-                    rows.find('a[href*="/search/sublanguageid-"]').first().attr('href');
+                // For movies, usually the first one or the one matching title best
+                selectionLink = selectionLinks.first().attr('href');
             }
 
             if (selectionLink) {
                 const nextUrl = selectionLink.startsWith('http') ? selectionLink : `${baseUrl}${selectionLink}`;
-                console.log(`[OpenSubtitles] Following selection link: ${nextUrl}`);
-                response = await performSearch(nextUrl, osLang);
-                $ = cheerio.load(response.data);
-                rows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
+                console.log(`[OpenSubtitles] Following selection: ${nextUrl}`);
+                try {
+                    response = await performSearch(nextUrl, osLang);
+                    $ = cheerio.load(response.data);
+                    resultRows = $('#search_results tr[id^="name"], table.dt tr[id^="name"]');
+                } catch (err) {
+                    console.log(`[OpenSubtitles] Selection following failed: ${err.message}`);
+                }
             }
         }
 
         const subtitles = [];
-        if (rows.length === 0) {
-            console.log(`[OpenSubtitles] No results found in parsed table. Body length: ${response.data.length}`);
-            // Let's try to look for links in the whole body as a last resort
-            const rawLinks = response.data.match(/\/subtitleserve\/sub\/\d+/g);
-            if (rawLinks) {
-                console.log(`[OpenSubtitles] Found ${rawLinks.length} raw download links!`);
-                const seenIds = new Set();
-                rawLinks.forEach(link => {
-                    const subId = link.split('/').pop();
-                    if (!seenIds.has(subId)) {
-                        seenIds.add(subId);
-                        subtitles.push({
-                            id: `os-raw-${subId}`,
-                            url: `https://dl.opensubtitles.org/${osLang.substring(0, 2)}/download/sub/${subId}`,
-                            lang: lang,
-                            title: `[OpenSubtitles] Release ${subId}`
-                        });
-                    }
-                });
+        if (!resultRows.length) {
+            console.log(`[OpenSubtitles] Still no result rows in the final table.`);
+            if (response && response.data) {
+                // Last ditch: look for any download links in the raw body
+                const rawLinks = response.data.match(/\/subtitleserve\/sub\/\d+/g);
+                if (rawLinks) {
+                    console.log(`[OpenSubtitles] Success! Found ${rawLinks.length} raw download links in body.`);
+                    const seenIds = new Set();
+                    rawLinks.forEach(link => {
+                        const subId = link.split('/').pop();
+                        if (!seenIds.has(subId)) {
+                            seenIds.add(subId);
+                            subtitles.push({
+                                id: `os-raw-${subId}`,
+                                url: `https://dl.opensubtitles.org/en/download/sub/${subId}`,
+                                lang: lang,
+                                title: `[OpenSubtitles] Release ${subId}`
+                            });
+                        }
+                    });
+                }
             }
         }
 
-        rows.each((i, el) => {
-            const dlLink = $(el).find('a[href*="/subtitleserve/sub/"]').attr('href');
-            const relName = $(el).find('strong').text() || $(el).find('a[href*="/subtitles/"]').first().text();
-            if (dlLink && relName) {
+        resultRows.each((i, el) => {
+            const row = $(el);
+            const dlLink = row.find('a[href*="/subtitleserve/sub/"]').first().attr('href');
+            let relName = row.find('strong').text() || row.find('a[href*="/subtitles/"]').first().text();
+
+            // Sometimes the release name is in a title attribute or a different cell
+            if (!relName || relName.length < 5) {
+                relName = row.find('td[align="left"]').text() || row.text().split('\n')[0];
+            }
+
+            if (dlLink) {
                 const subId = dlLink.split('/').pop();
                 subtitles.push({
                     id: `os-${subId}`,
-                    url: `https://dl.opensubtitles.org/${osLang.substring(0, 2)}/download/sub/${subId}`,
+                    url: `https://dl.opensubtitles.org/en/download/sub/${subId}`,
                     lang: lang,
-                    title: relName.trim()
+                    title: relName.trim() || `OpenSubtitles-${subId}`
                 });
             }
         });
@@ -130,11 +139,15 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
 async function performSearch(url, osLang) {
     return await axios.get(url, {
         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Referer': 'https://www.opensubtitles.org/',
-            'Cookie': `Language=${osLang.substring(0, 2)}`
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Cookie': `Language=en; sublanguageid=${osLang}`
         },
-        timeout: 15000
+        timeout: 20000
     });
 }
 
