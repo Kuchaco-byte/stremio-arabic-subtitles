@@ -74,10 +74,27 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
         }
 
         const subtitles = [];
-        if (!resultRows.length) {
+        const isDetailPage = $ ? $('a[href*="/subtitleserve/sub/"]').length > 0 && !resultRows.length : false;
+
+        if (isDetailPage) {
+            console.log(`[OpenSubtitles] Detail page detected (Direct Landing).`);
+            const dlLink = $('a[href*="/subtitleserve/sub/"]').first().attr('href');
+            let relName = $('h1').text() || $('title').text() || title;
+            if (dlLink) {
+                const subId = dlLink.split('/').pop();
+                subtitles.push({
+                    id: `os-direct-${subId}`,
+                    url: `https://www.opensubtitles.org/en/download/sub/${subId}`,
+                    lang: lang,
+                    title: `[OpenSubtitles] ${relName.trim()}`,
+                    source: "OpenSubtitles"
+                });
+            }
+        }
+
+        if (!subtitles.length && !resultRows.length) {
             console.log(`[OpenSubtitles] Still no result rows in the final table.`);
             if (response && response.data) {
-                // Last ditch: look for any download links in the raw body
                 const rawLinks = response.data.match(/\/subtitleserve\/sub\/\d+/g);
                 if (rawLinks) {
                     console.log(`[OpenSubtitles] Success! Found ${rawLinks.length} raw download links in body.`);
@@ -88,9 +105,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                             seenIds.add(subId);
                             subtitles.push({
                                 id: `os-raw-${subId}`,
-                                url: `https://dl.opensubtitles.org/en/download/sub/${subId}`,
+                                url: `https://www.opensubtitles.org/en/download/sub/${subId}`,
                                 lang: lang,
-                                title: `[OpenSubtitles] Release ${subId}`
+                                title: `[OpenSubtitles] Release ${subId}`,
+                                source: "OpenSubtitles"
                             });
                         }
                     });
@@ -103,7 +121,6 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
             const dlLink = row.find('a[href*="/subtitleserve/sub/"]').first().attr('href');
             let relName = row.find('strong').text() || row.find('a[href*="/subtitles/"]').first().text();
 
-            // Sometimes the release name is in a title attribute or a different cell
             if (!relName || relName.length < 5) {
                 relName = row.find('td[align="left"]').text() || row.text().split('\n')[0];
             }
@@ -112,9 +129,10 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
                 const subId = dlLink.split('/').pop();
                 subtitles.push({
                     id: `os-${subId}`,
-                    url: `https://dl.opensubtitles.org/en/download/sub/${subId}`,
+                    url: `https://www.opensubtitles.org/en/download/sub/${subId}`,
                     lang: lang,
-                    title: relName.trim() || `OpenSubtitles-${subId}`
+                    title: `[OpenSubtitles] ${relName.trim() || `Release ${subId}`}`,
+                    source: "OpenSubtitles"
                 });
             }
         });
