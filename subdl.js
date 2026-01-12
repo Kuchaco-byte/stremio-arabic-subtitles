@@ -56,13 +56,17 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
 
         const subtitles = response.data.subtitles
             .slice(0, limit)
-            .map(sub => ({
-                id: `subdl-${sub.id || Math.random().toString(36).substr(2, 7)}`,
-                url: sub.url,
-                lang: lang, // Return the requested Stremio lang code
-                title: `[SubDL] ${sub.title || title}`,
-                size: sub.size || "" // Pass file size if available
-            }));
+            .map((sub, idx) => {
+                const releaseName = sub.release_name || sub.title || title;
+                return {
+                    id: `subdl-${sub.id || idx}-${imdbId}`,
+                    url: sub.url,
+                    lang: lang,
+                    title: `[SubDL] ${releaseName}`,
+                    originalTitle: releaseName,
+                    size: sub.size || ""
+                };
+            });
 
         console.log(`[SubDL] Found ${subtitles.length} results (Limit: ${limit})`);
         return subtitles;

@@ -48,13 +48,17 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
         const limit = config.subsourceLimit || 20;
         const subtitles = response.data.subtitles
             .slice(0, limit)
-            .map(sub => ({
-                id: `subsource-${sub.id || Math.random().toString(36).substr(2, 7)}`,
-                url: sub.url,
-                lang: lang, // Return requested code
-                title: `[SubSource] ${sub.title || title}`,
-                size: sub.size || "" // Pass file size if available
-            }));
+            .map((sub, idx) => {
+                const releaseName = sub.release_name || sub.title || title;
+                return {
+                    id: `subsource-${sub.id || idx}-${imdbId}`,
+                    url: sub.url,
+                    lang: lang,
+                    title: `[SubSource] ${releaseName}`,
+                    originalTitle: releaseName,
+                    size: sub.size || ""
+                };
+            });
 
         console.log(`[SubSource] Found ${subtitles.length} results (Limit: ${limit})`);
         return subtitles;

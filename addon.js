@@ -52,7 +52,7 @@ module.exports = {
         console.log(`[Addon] IMDB: ${imdbId} | S: ${season} | E: ${episode}`);
 
         // Cache Key
-        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${config.osCount}:${config.ytsCount}:${autoTranslate}`;
+        const cacheKey = `${CACHE_KEY_PREFIX}:${type}:${id}:${lang}:${config.osCount}:${config.ytsCount}:${config.subdlLimit}:${config.subsourceLimit}:${autoTranslate}`;
         const cachedResults = cache.get(cacheKey);
 
         if (cachedResults) {

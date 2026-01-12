@@ -5,11 +5,12 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
     const baseUrl = "https://www.opensubtitles.org";
 
     try {
-        const { getOSCode } = require("./languages");
+        const { getOSCode, getGoogleCode } = require("./languages");
         const osLang = getOSCode(lang);
+        const pathLang = getGoogleCode(lang) || osLang.substring(0, 2);
 
         // 1. PRIMARY SEARCH: Search by IMDB ID (Most accurate)
-        let url = `${baseUrl}/${osLang}/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
+        let url = `${baseUrl}/${pathLang}/search/sublanguageid-${osLang}/imdbid-${imdbId.replace('tt', '')}`;
         let response = await performSearch(url, osLang);
 
         const cheerio = require("cheerio");
@@ -21,7 +22,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara") 
         if (resultRows.length === 0 && title) {
             console.log(`[OpenSubtitles] IMDB search failed for ${lang}. Falling back to Title Search: ${title}`);
             const query = encodeURIComponent(title.replace(/[^a-zA-Z0-9\s]/g, ''));
-            url = `${baseUrl}/${osLang}/search2/sublanguageid-${osLang}/moviename-${query}`;
+            url = `${baseUrl}/${pathLang}/search2/sublanguageid-${osLang}/moviename-${query}`;
             response = await performSearch(url, osLang);
             $ = cheerio.load(response.data);
             resultRows = $('#search_results tr[id^="name"]');
