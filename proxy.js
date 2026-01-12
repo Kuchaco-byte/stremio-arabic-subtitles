@@ -116,7 +116,7 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
                 // Robust Batching
                 const BATCH_SIZE = 50;
-                const TRANSLATION_SEPARATOR = "\n[#]\n";
+                const TRANSLATION_SEPARATOR = "\n[[#]]\n";
 
                 for (let i = 0; i < srtArray.length; i += BATCH_SIZE) {
                     const batch = srtArray.slice(i, i + BATCH_SIZE);
@@ -124,7 +124,7 @@ async function downloadSubtitle(url, season, episode, refererHint, provider, use
 
                     try {
                         const res = await translatte(joined, { to: target });
-                        const translatedParts = res.text.split(/\[#\]/i).map(t => t.trim());
+                        const translatedParts = res.text.split(/\[\[#\]\]/i).map(t => t.trim());
                         batch.forEach((item, idx) => {
                             if (translatedParts[idx]) item.text = translatedParts[idx];
                         });

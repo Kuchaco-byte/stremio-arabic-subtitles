@@ -56,10 +56,10 @@ async function handleAIFallback(params) {
     const { rankSubtitles } = require("./addon-helpers");
 
     // We rank all sources, but we give a MASSIVE hidden boost to English sources
+    masterSourceList = rankSubtitles(masterSourceList, filename, lang); // Rank using TARGET language dorks
     masterSourceList = masterSourceList.map(s => {
-        const sub = rankSubtitles([s], filename, s.sourceLang)[0];
-        if (s.sourceLang === 'eng') sub.rankScore += 500; // Hard-priority for English
-        return sub;
+        if (s.sourceLang === 'eng') s.rankScore += 500; // Hard-priority for English
+        return s;
     }).sort((a, b) => (b.rankScore || 0) - (a.rankScore || 0));
 
     // Pick top 10 unique titles (to avoid translating the same file from 3 providers)

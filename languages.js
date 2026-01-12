@@ -18,62 +18,62 @@ const LANGUAGES = {
     "fre": {
         name: "French", google: "fr", subdl: "FR", yify: "french", oscode: "fre",
         encodings: ["windows-1252", "iso-8859-15", "utf-8"],
-        dorks: ["compatible", "complet", "officiel", "exclusif", "corrigé", "vff", "vfq", "french", "truefrench"]
+        dorks: ["compatible", "complet", "officiel", "exclusif", "corrigé", "vff", "vfq", "french", "truefrench", "multi"]
     },
     "spa": {
         name: "Spanish", google: "es", subdl: "ES", yify: "spanish", oscode: "spa",
         encodings: ["windows-1252", "iso-8859-1", "utf-8"],
-        dorks: ["compatible", "completo", "oficial", "exclusivo", "corregido", "castellano", "latino", "español"]
+        dorks: ["compatible", "completo", "oficial", "exclusivo", "corregido", "castellano", "latino", "español", "spanish", "multi"]
     },
     "ger": {
         name: "German", google: "de", subdl: "DE", yify: "german", oscode: "ger",
         encodings: ["windows-1252", "iso-8859-1", "utf-8"],
-        dorks: ["kompatibel", "komplett", "offiziell", "exklusiv", "korrigiert", "deutsch", "german"]
+        dorks: ["kompatibel", "komplett", "offiziell", "exklusiv", "korrigiert", "deutsch", "german", "multi"]
     },
     "ita": {
         name: "Italian", google: "it", subdl: "IT", yify: "italian", oscode: "ita",
         encodings: ["windows-1252", "iso-8859-1", "utf-8"],
-        dorks: ["compatibile", "completo", "ufficiale", "esclusivo", "corretto", "italiano"]
+        dorks: ["compatibile", "completo", "ufficiale", "esclusivo", "corretto", "italiano", "italian", "multi"]
     },
     "rus": {
         name: "Russian", google: "ru", subdl: "RU", yify: "russian", oscode: "rus",
         encodings: ["windows-1251", "iso-8859-5", "utf-8"],
-        dorks: ["полный", "официальный", "эксклюзивный", "исправленный", "авторский", "чистый"]
+        dorks: ["полный", "официальный", "эксклюзивный", "исправленный", "авторский", "чистый", "russian", "multi"]
     },
     "tur": {
         name: "Turkish", google: "tr", subdl: "TR", yify: "turkish", oscode: "tur",
         encodings: ["windows-1254", "iso-8859-9", "utf-8"],
-        dorks: ["uyumlu", "tam", "resmi", "özel", "düzeltilmiş", "türkçe", "güncel"]
+        dorks: ["uyumlu", "tam", "resmi", "özel", "düzeltilmiş", "türkçe", "güncel", "turkish", "multi"]
     },
     "por": {
         name: "Portuguese", google: "pt", subdl: "PT", yify: "portuguese", oscode: "por",
         encodings: ["windows-1252", "iso-8859-1", "utf-8"],
-        dorks: ["compatível", "completo", "oficial", "exclusivo", "corrigido", "br", "português"]
+        dorks: ["compatível", "completo", "oficial", "exclusivo", "corrigido", "br", "português", "portuguese", "multi"]
     },
     "dut": {
         name: "Dutch", google: "nl", subdl: "NL", yify: "dutch", oscode: "dut",
         encodings: ["windows-1252", "iso-8859-1", "utf-8"],
-        dorks: ["geschikt", "volledig", "officieel", "exclusief", "gecorrigeerd", "nederlands"]
+        dorks: ["geschikt", "volledig", "officieel", "exclusief", "gecorrigeerd", "nederlands", "dutch", "multi"]
     },
     "chi": {
         name: "Chinese", google: "zh", subdl: "ZH", yify: "chinese", oscode: "chi",
         encodings: ["gbk", "gb2312", "big5", "utf-8"],
-        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字"]
+        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字", "chinese", "multi"]
     },
     "zho": {
         name: "Chinese", google: "zh", subdl: "ZH", yify: "chinese", oscode: "chi",
         encodings: ["gbk", "gb2312", "big5", "utf-8"],
-        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字"]
+        dorks: ["完整", "官方", "独家", "修正", "简繁", "双语", "中字", "chinese", "multi"]
     },
     "jpn": {
         name: "Japanese", google: "ja", subdl: "JA", yify: "japanese", oscode: "jpn",
         encodings: ["shift-jis", "euc-jp", "utf-8"],
-        dorks: ["完全", "公式", "専売", "修正", "日本語"]
+        dorks: ["完全", "公式", "専売", "修正", "日本語", "japanese", "multi"]
     },
     "kor": {
         name: "Korean", google: "ko", subdl: "KO", yify: "korean", oscode: "kor",
         encodings: ["euc-kr", "utf-8"],
-        dorks: ["완전", "공식", "독점", "수정", "한국어"]
+        dorks: ["완전", "공식", "독점", "수정", "한국어", "korean", "multi"]
     }
 };
 

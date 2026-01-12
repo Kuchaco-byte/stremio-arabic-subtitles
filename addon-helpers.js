@@ -44,9 +44,9 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
         });
 
         // 3. Trusted Groups
-        const groups = ["yify", "psa", "rarbg", "evo", "fgt", "nitro", "tigole", "joy", "yts"];
+        const groups = ["yify", "psa", "rarbg", "evo", "fgt", "nitro", "tigole", "joy", "yts", "qxrd", "vxt", "utp", "pahe", "gls"];
         groups.forEach(group => {
-            if (fn && fn.includes(group) && subTitle.includes(group)) score += 80;
+            if (fn && fn.includes(group) && subTitle.includes(group)) score += 120;
         });
 
         // 4. Dorks / Relevance Keywords (Dynamic by Language)

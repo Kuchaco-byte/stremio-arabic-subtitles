@@ -14,6 +14,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
 
         const { getSubDLCode } = require("./languages");
         const targetLangCode = getSubDLCode(lang);
+        const baseUrl = "https://subdl.strem.top";
 
         // Default Config String for ST+ (generic)
         // We construct it dynamically based on the lang key
