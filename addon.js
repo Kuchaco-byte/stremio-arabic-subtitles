@@ -33,7 +33,7 @@ module.exports = {
     getSubtitles: async (args, config = {}) => {
         const { type, id } = args;
         const filename = (args.extraData && args.extraData.filename) || args.filename || "";
-        const lang = config.lang || "ara";
+        const lang = config.lang || "eng";
         const autoTranslate = config.autoTranslate === true || config.autoTranslate === 'true';
         const baseUrl = config.baseUrl || "";
 

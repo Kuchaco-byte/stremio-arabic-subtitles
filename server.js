@@ -54,7 +54,7 @@ app.get("/", (req, res) => res.redirect("/configure"));
 // 4. MANIFEST LOGIC (DYNAMIC HOST DETECTION)
 function configMiddleware(req, res, next) {
     let configStr = req.params.config;
-    let config = { lang: "ara", osCount: 5, ytsCount: 3, subdlLimit: 5, subsourceLimit: 5, autoTranslate: true };
+    let config = { lang: "eng", osCount: 15, ytsCount: 5, subdlLimit: 15, subsourceLimit: 15, autoTranslate: true };
 
     if (configStr) {
         try {
@@ -111,7 +111,7 @@ app.get("/:config/manifest.json", configMiddleware, serveManifest);
 // 5. SUBTITLES
 async function handleSubtitles(req, res) {
     const { type, id, extra } = req.params;
-    const config = req.addonConfig || { lang: "ara", osCount: 5, ytsCount: 3, subdlLimit: 5, subsourceLimit: 5, autoTranslate: true };
+    const config = req.addonConfig || { lang: "eng", osCount: 15, ytsCount: 5, subdlLimit: 15, subsourceLimit: 15, autoTranslate: true };
 
     let filename = "";
     if (extra && extra.includes("filename=")) {

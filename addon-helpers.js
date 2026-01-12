@@ -67,9 +67,9 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
         if (subTitle.includes("retail")) score += 100;
 
         // English defaults for everyone (universal dorks)
-        const universalDorks = ["top rated", "best", "verified", "proper"];
+        const universalDorks = ["top rated", "best", "verified", "proper", "exact", "official"];
         universalDorks.forEach(ud => {
-            if (subTitle.includes(ud)) score += 50;
+            if (subTitle.includes(ud)) score += 80;
         });
 
         if (subTitle.length < 5) score -= 50;
@@ -82,11 +82,24 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
 function deduplicateSubtitles(subtitles) {
     if (!subtitles) return [];
     const unique = new Map();
-    subtitles.forEach(sub => {
+    subtitles.forEach((sub, idx) => {
         const normTitle = (sub.originalTitle || sub.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        const sizeInfo = sub.fileSize || "";
+        const sizeInfo = sub.fileSize || sub.size || "";
         const providerInfo = sub.source || "";
-        const key = `${normTitle}|${sizeInfo}|${providerInfo}`;
+
+        // If the title is too generic (e.g. just the provider tag and movie name), 
+        // we use a more unique key to avoid collapsing different releases from the same provider.
+        let key = `${normTitle}|${sizeInfo}`;
+
+        // If we have a short title and no size, we append the provider and index 
+        // to effectively disable deduplication for this specific provider's results 
+        // unless they are absolutely identical.
+        if (normTitle.length < 15 && !sizeInfo) {
+            key += `|${providerInfo}|${sub.id || idx}`;
+        } else {
+            // Standard cross-provider deduplication
+            key += `|unique`;
+        }
 
         if (!unique.has(key)) {
             unique.set(key, sub);
