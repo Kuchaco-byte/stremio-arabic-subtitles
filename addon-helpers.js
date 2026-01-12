@@ -1,11 +1,11 @@
 const { fuzzyMatch } = require("./string-utils");
-const { getDorks } = require("./languages");
 
 function rankSubtitles(subtitles, filename, lang = "ara") {
     if (!subtitles) return [];
+    const { getDorks, getLanguageName } = require("./languages");
     const fn = filename ? filename.toLowerCase().replace(/[^a-z0-9]/g, ' ') : "";
-
     const langDorks = getDorks(lang);
+    const displayName = getLanguageName(lang);
 
     return subtitles.map(sub => {
         let score = 0;
@@ -51,7 +51,6 @@ function rankSubtitles(subtitles, filename, lang = "ara") {
 
         // 4. Dorks / Relevance Keywords (Dynamic by Language)
         // Dork matching (Dynamic Strength)
-        const langDorks = getDorks(lang);
         langDorks.forEach(dork => {
             if (subTitle.toLowerCase().includes(dork.toLowerCase())) {
                 score += 250; // Increased priority for dorks

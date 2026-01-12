@@ -10,8 +10,9 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
     const baseUrl = "https://www.opensubtitles.org";
 
     try {
-        const { getOSCode, getGoogleCode } = require("./languages");
+        const { getOSCode, getGoogleCode, getLanguageName } = require("./languages");
         const osLang = getOSCode(lang);
+        const displayName = getLanguageName(lang);
         const pathLang = getGoogleCode(lang) || osLang.substring(0, 2);
 
         // Try localized path FIRST, then English as fallback if needed
@@ -81,10 +82,14 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                 let subId = dlLink ? dlLink.split('/').pop() : (titleLink ? titleLink.match(/\/subtitles\/(\d+)\//)?.[1] : "");
 
                 if (subId) {
+                    const downloadUrl = `https://www.opensubtitles.org/en/download/sub/${subId}`;
+                    // Final URL must be proxied to bypass OpenSubtitles UA/Referer blocks in Stremio player
+                    const proxiedUrl = `${config.baseUrl || ""}/proxy/subtitle?url=${encodeURIComponent(downloadUrl)}&provider=OpenSubtitles&lang=${lang}`;
+
                     subtitles.push({
                         id: `os-${subId}`,
-                        url: `https://www.opensubtitles.org/en/download/sub/${subId}`,
-                        lang: lang,
+                        url: proxiedUrl,
+                        lang: displayName, // Stremio expects full name e.g. "French"
                         title: `[OpenSubtitles] ${relName.trim() || `Release ${subId}`}`,
                         source: "OpenSubtitles"
                     });
@@ -103,8 +108,8 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
                         seenIds.add(subId);
                         subtitles.push({
                             id: `os-raw-${subId}`,
-                            url: `https://www.opensubtitles.org/en/download/sub/${subId}`,
-                            lang: lang,
+                            url: `${config.baseUrl || ""}/proxy/subtitle?url=${encodeURIComponent(`https://www.opensubtitles.org/en/download/sub/${subId}`)}&provider=OpenSubtitles&lang=${lang}`,
+                            lang: displayName,
                             title: `[OpenSubtitles] Release ${subId}`,
                             source: "OpenSubtitles"
                         });

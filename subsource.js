@@ -13,7 +13,9 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
         }
 
         const subsourceKey = config.subsourceKey || "";
-        const baseUrl = "https://subsource.strem.top";
+        const { getLanguageName } = require("./languages");
+        const displayName = getLanguageName(lang);
+        const baseUrl = "https://api.subsource.net/api";
 
         const { getYIFYCode } = require("./languages");
         const targetLangName = getYIFYCode(lang);
@@ -51,11 +53,11 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             .map((sub, idx) => {
                 const releaseName = sub.release_name || sub.title || title;
                 return {
-                    id: `subsource-${sub.id || idx}-${imdbId}`,
-                    url: sub.url,
-                    lang: lang,
-                    title: `[SubSource] ${releaseName}`,
-                    originalTitle: releaseName,
+                    id: `subsource-${sub.id}`,
+                    url: sub.full_url || sub.url,
+                    lang: displayName, // Stremio compatibility
+                    title: `[SubSource] ${releaseName}`, // Assuming relName was a typo for releaseName
+                    source: "SubSource",
                     size: sub.size || ""
                 };
             });

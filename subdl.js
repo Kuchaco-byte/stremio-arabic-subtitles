@@ -12,8 +12,9 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             id = `${imdbId}:${season}:${episode}`;
         }
 
-        const { getSubDLCode } = require("./languages");
-        const targetLangCode = getSubDLCode(lang);
+        const { getSubDLCode, getLanguageName } = require("./languages");
+        const subdlLang = getSubDLCode(lang);
+        const displayName = getLanguageName(lang);
         const baseUrl = "https://subdl.strem.top";
 
         // Default Config String for ST+ (generic)
@@ -22,7 +23,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
 
         let encodedConfig;
         if (config.subdlKey) {
-            encodedConfig = Buffer.from(`${config.subdlKey}/${targetLangCode}/hiInclude/`).toString('base64');
+            encodedConfig = Buffer.from(`${config.subdlKey}/${subdlLang}/hiInclude/`).toString('base64');
         } else {
             // If no key, we might need a default key or just standard path. 
             // Using a generic generation if no key is present might be tricky if the addon requires a valid key for heavy usage.
@@ -32,7 +33,7 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             // That looks like "Key/AR/hiInclude/".
             // We will assume "VnkjiqL1dSU647gASStn6KocPsUusFs" is a public/shared key.
             const publicKey = "VnkjiqL1dSU647gASStn6KocPsUusFs";
-            encodedConfig = Buffer.from(`${publicKey}/${targetLangCode}/hiInclude/`).toString('base64');
+            encodedConfig = Buffer.from(`${publicKey}/${subdlLang}/hiInclude/`).toString('base64');
         }
 
         const url = `${baseUrl}/${encodedConfig}/subtitles/${type}/${id}.json`;
@@ -59,12 +60,11 @@ async function getSubtitles(type, imdbId, title, season, episode, lang = "ara", 
             .map((sub, idx) => {
                 const releaseName = sub.release_name || sub.title || title;
                 return {
-                    id: `subdl-${sub.id || idx}-${imdbId}`,
-                    url: sub.url,
-                    lang: lang,
+                    id: `subdl-${sub.id}`,
+                    url: sub.url || `https://subdl.com/s/subtitle/${sub.id}`,
+                    lang: displayName, // Stremio compatibility
                     title: `[SubDL] ${releaseName}`,
-                    originalTitle: releaseName,
-                    size: sub.size || ""
+                    source: "SubDL"
                 };
             });
 
